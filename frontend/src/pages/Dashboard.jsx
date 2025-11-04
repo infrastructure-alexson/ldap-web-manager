@@ -2,15 +2,53 @@
  * Dashboard Page
  */
 
-import React from 'react';
-import { FiUsers, FiGrid, FiGlobe, FiServer } from 'react-icons/fi';
+import React, { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { FiUsers, FiGrid, FiGlobe, FiServer, FiActivity, FiAlertCircle } from 'react-icons/fi';
+import { usersApi } from '../api/users';
+import { groupsApi } from '../api/groups';
 
 const Dashboard = () => {
+  // Fetch statistics
+  const { data: usersData, isLoading: usersLoading } = useQuery({
+    queryKey: ['users', 'stats'],
+    queryFn: () => usersApi.list({ page: 1, page_size: 1 }),
+  });
+
+  const { data: groupsData, isLoading: groupsLoading } = useQuery({
+    queryKey: ['groups', 'stats'],
+    queryFn: () => groupsApi.list({ page: 1, page_size: 1 }),
+  });
+
   const stats = [
-    { name: 'Total Users', value: '—', icon: FiUsers, color: 'bg-blue-500' },
-    { name: 'Groups', value: '—', icon: FiGrid, color: 'bg-green-500' },
-    { name: 'DNS Zones', value: '—', icon: FiGlobe, color: 'bg-purple-500' },
-    { name: 'DHCP Subnets', value: '—', icon: FiServer, color: 'bg-orange-500' },
+    { 
+      name: 'Total Users', 
+      value: usersLoading ? '—' : usersData?.total || 0, 
+      icon: FiUsers, 
+      color: 'bg-blue-500',
+      href: '/users'
+    },
+    { 
+      name: 'Groups', 
+      value: groupsLoading ? '—' : groupsData?.total || 0, 
+      icon: FiGrid, 
+      color: 'bg-green-500',
+      href: '/groups'
+    },
+    { 
+      name: 'DNS Zones', 
+      value: '—', 
+      icon: FiGlobe, 
+      color: 'bg-purple-500',
+      href: '/dns'
+    },
+    { 
+      name: 'DHCP Subnets', 
+      value: '—', 
+      icon: FiServer, 
+      color: 'bg-orange-500',
+      href: '/dhcp'
+    },
   ];
 
   return (
@@ -25,7 +63,11 @@ const Dashboard = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
         {stats.map((stat) => (
-          <div key={stat.name} className="card">
+          <a
+            key={stat.name}
+            href={stat.href}
+            className="card hover:shadow-md transition-shadow cursor-pointer"
+          >
             <div className="flex items-center">
               <div className={`p-3 rounded-lg ${stat.color}`}>
                 <stat.icon className="w-6 h-6 text-white" />
@@ -35,7 +77,7 @@ const Dashboard = () => {
                 <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
               </div>
             </div>
-          </div>
+          </a>
         ))}
       </div>
 

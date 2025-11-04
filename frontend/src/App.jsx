@@ -13,6 +13,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
+import Groups from './pages/Groups';
 import Layout from './components/Layout';
 
 // Create React Query client
@@ -63,8 +64,8 @@ const AppRoutes = () => {
       >
         <Route index element={<Dashboard />} />
         <Route path="users" element={<Users />} />
+        <Route path="groups" element={<Groups />} />
         {/* Add more routes as developed */}
-        {/* <Route path="groups" element={<Groups />} /> */}
         {/* <Route path="dns" element={<DNS />} /> */}
         {/* <Route path="dhcp" element={<DHCP />} /> */}
         {/* <Route path="ipam" element={<IPAM />} /> */}
