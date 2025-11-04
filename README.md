@@ -301,6 +301,7 @@ The main dashboard provides:
 - [Development Guide](doc/DEVELOPMENT.md) - For contributors
 - [Project Summary](doc/PROJECT-SUMMARY.md) - Complete feature overview
 - [v2.0.0 Release Summary](doc/V2-COMPLETION-SUMMARY.md) - Major release details
+- [Product Roadmap](ROADMAP.md) - Future enhancements and planned features
 - [API Documentation](https://your-server/api/docs) - Interactive Swagger docs (when deployed)
 
 ---
