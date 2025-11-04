@@ -8,6 +8,7 @@ import { FiUsers, FiGrid, FiGlobe, FiServer, FiActivity, FiAlertCircle } from 'r
 import { usersApi } from '../api/users';
 import { groupsApi } from '../api/groups';
 import { dnsApi } from '../api/dns';
+import { dhcpApi } from '../api/dhcp';
 
 const Dashboard = () => {
   // Fetch statistics
@@ -24,6 +25,11 @@ const Dashboard = () => {
   const { data: dnsData, isLoading: dnsLoading } = useQuery({
     queryKey: ['dns', 'stats'],
     queryFn: () => dnsApi.listZones({ page: 1, page_size: 1 }),
+  });
+
+  const { data: dhcpData, isLoading: dhcpLoading } = useQuery({
+    queryKey: ['dhcp', 'stats'],
+    queryFn: dhcpApi.getStats,
   });
 
   const stats = [
@@ -50,7 +56,7 @@ const Dashboard = () => {
     },
     { 
       name: 'DHCP Subnets', 
-      value: '—', 
+      value: dhcpLoading ? '—' : dhcpData?.total_subnets || 0, 
       icon: FiServer, 
       color: 'bg-orange-500',
       href: '/dhcp'
