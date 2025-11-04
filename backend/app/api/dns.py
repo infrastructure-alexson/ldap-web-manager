@@ -424,3 +424,173 @@ async def list_records(
             detail=f"Failed to list DNS records: {str(e)}"
         )
 
+
+@router.post("/zones/{zone_name}/records", response_model=DNSRecordResponse, status_code=status.HTTP_201_CREATED)
+async def create_record(
+    zone_name: str,
+    record: DNSRecordCreate,
+    current_user: dict = Depends(require_operator)
+):
+    """
+    Create DNS record in zone
+    
+    Args:
+        zone_name: Zone name
+        record: Record information
+        current_user: Authenticated user (operator or admin)
+        
+    Returns:
+        Created record
+    """
+    config = get_config()
+    ldap_conn = get_ldap_connection()
+    
+    zone_dn = f"idnsName={zone_name},{config.ldap_dns_ou}"
+    record_dn = f"idnsName={record.idnsName},{zone_dn}"
+    
+    # Map record type to LDAP attribute
+    type_attr_map = {
+        'A': 'aRecord',
+        'AAAA': 'aAAARecord',
+        'CNAME': 'cNAMERecord',
+        'MX': 'mXRecord',
+        'TXT': 'tXTRecord',
+        'PTR': 'pTRRecord',
+        'SRV': 'sRVRecord',
+        'NS': 'nSRecord',
+    }
+    
+    attr_name = type_attr_map.get(record.record_type)
+    if not attr_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported record type: {record.record_type}"
+        )
+    
+    # Build LDAP attributes
+    attributes = {
+        'objectClass': [b'idnsRecord', b'top'],
+        'idnsName': [record.idnsName.encode('utf-8')],
+        attr_name: [record.value.encode('utf-8')],
+    }
+    
+    try:
+        # Try to add new record entry
+        ldap_conn.add(record_dn, attributes)
+        logger.info(f"DNS record created: {record.idnsName} ({record.record_type}) in {zone_name} by {current_user.get('username')}")
+        
+    except ldap.ALREADY_EXISTS:
+        # Record entry exists, add value to existing entry
+        try:
+            modifications = [(
+                ldap.MOD_ADD,
+                attr_name,
+                [record.value.encode('utf-8')]
+            )]
+            ldap_conn.modify(record_dn, modifications)
+            logger.info(f"DNS record value added: {record.idnsName} ({record.record_type}) in {zone_name} by {current_user.get('username')}")
+        except ldap.TYPE_OR_VALUE_EXISTS:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Record value already exists"
+            )
+    except ldap.LDAPError as e:
+        logger.error(f"LDAP error creating DNS record: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create DNS record: {str(e)}"
+        )
+    
+    # Return created record
+    return DNSRecordResponse(
+        dn=record_dn,
+        idnsName=record.idnsName,
+        record_type=record.record_type,
+        value=record.value,
+        ttl=record.ttl,
+        priority=record.priority,
+    )
+
+
+@router.delete("/zones/{zone_name}/records/{record_name}/{record_type}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_record(
+    zone_name: str,
+    record_name: str,
+    record_type: str,
+    value: str = Query(..., description="Record value to delete"),
+    current_user: dict = Depends(require_operator)
+):
+    """
+    Delete DNS record from zone
+    
+    Args:
+        zone_name: Zone name
+        record_name: Record name
+        record_type: Record type
+        value: Record value to delete
+        current_user: Authenticated user (operator or admin)
+    """
+    config = get_config()
+    ldap_conn = get_ldap_connection()
+    
+    zone_dn = f"idnsName={zone_name},{config.ldap_dns_ou}"
+    record_dn = f"idnsName={record_name},{zone_dn}"
+    
+    # Map record type to LDAP attribute
+    type_attr_map = {
+        'A': 'aRecord',
+        'AAAA': 'aAAARecord',
+        'CNAME': 'cNAMERecord',
+        'MX': 'mXRecord',
+        'TXT': 'tXTRecord',
+        'PTR': 'pTRRecord',
+        'SRV': 'sRVRecord',
+        'NS': 'nSRecord',
+    }
+    
+    attr_name = type_attr_map.get(record_type.upper())
+    if not attr_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported record type: {record_type}"
+        )
+    
+    try:
+        # Try to remove the specific value
+        modifications = [(
+            ldap.MOD_DELETE,
+            attr_name,
+            [value.encode('utf-8')]
+        )]
+        ldap_conn.modify(record_dn, modifications)
+        logger.info(f"DNS record deleted: {record_name} ({record_type}) from {zone_name} by {current_user.get('username')}")
+        
+        # Check if entry has any remaining records, if not delete the entry
+        entry = ldap_conn.get_entry(record_dn)
+        has_records = False
+        for attr in type_attr_map.values():
+            if entry and attr in entry:
+                has_records = True
+                break
+        
+        if not has_records:
+            # No records left, delete the entry
+            ldap_conn.delete(record_dn)
+            
+    except ldap.NO_SUCH_OBJECT:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"DNS record not found"
+        )
+    except ldap.NO_SUCH_ATTRIBUTE:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Record value not found"
+        )
+    except ldap.LDAPError as e:
+        logger.error(f"LDAP error deleting DNS record: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete DNS record: {str(e)}"
+        )
+
