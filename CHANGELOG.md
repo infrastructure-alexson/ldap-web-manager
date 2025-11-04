@@ -130,8 +130,8 @@ CREATE TABLE ip_allocations (
 #### **Infrastructure & Documentation**
 
 **Documentation**:
-- `V2-COMPLETION-SUMMARY.md` - Complete v2.0.0 feature documentation with API examples
-- `PROJECT-SUMMARY.md` - Updated with all current features
+- `doc/V2-COMPLETION-SUMMARY.md` - Complete v2.0.0 feature documentation with API examples
+- `doc/PROJECT-SUMMARY.md` - Updated with all current features
 - All documentation updated to v2.0.0 with ISO 8601 dates (YYYY-MM-DD)
 - API usage examples for DHCP and IPAM operations
 - Integration guides for Kea DHCP and IPAM database
@@ -353,7 +353,7 @@ backend/app/models/dhcp.py           (144 lines)
 backend/app/models/ipam.py           (169 lines)
 frontend/src/api/dhcp.js             (114 lines)
 frontend/src/pages/DHCP.jsx          (260 lines)
-V2-COMPLETION-SUMMARY.md             (358 lines)
+doc/V2-COMPLETION-SUMMARY.md         (358 lines)
 ```
 
 #### **Modified Files**
@@ -362,9 +362,9 @@ backend/app/main.py                  (added dhcp, ipam routers)
 frontend/src/App.jsx                 (added DHCP route)
 frontend/src/pages/Dashboard.jsx     (added DHCP stats)
 README.md                            (updated features)
-PROJECT-SUMMARY.md                   (updated statistics)
+doc/PROJECT-SUMMARY.md               (updated statistics)
 CHANGELOG.md                         (this file)
-DEVELOPMENT.md                       (version footer)
+doc/DEVELOPMENT.md                   (version footer)
 doc/INSTALLATION.md                  (version footer)
 doc/NGINX-SETUP.md                   (version footer)
 ```
@@ -405,7 +405,7 @@ doc/NGINX-SETUP.md                   (version footer)
 - Real-time form error feedback
 
 **Documentation**
-- PROJECT-SUMMARY.md with complete feature documentation
+- doc/PROJECT-SUMMARY.md with complete feature documentation
 - Updated README with completion status
 - Clear roadmap for future features (DHCP, IPAM)
 

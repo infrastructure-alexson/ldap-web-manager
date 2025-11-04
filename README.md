@@ -200,10 +200,10 @@ ldap-web-manager/
 │
 ├── doc/                           # Documentation
 │   ├── INSTALLATION.md           # Detailed installation guide
-│   ├── API.md                    # REST API documentation
 │   ├── NGINX-SETUP.md            # NGINX configuration guide
-│   ├── USER-GUIDE.md             # End-user documentation
-│   └── DEVELOPMENT.md            # Developer guide
+│   ├── DEVELOPMENT.md            # Developer guide
+│   ├── PROJECT-SUMMARY.md        # Complete feature overview
+│   └── V2-COMPLETION-SUMMARY.md  # v2.0.0 release summary
 │
 ├── nginx/                         # NGINX-specific files
 │   ├── sites-available/          # NGINX site configs
@@ -298,9 +298,10 @@ The main dashboard provides:
 
 - [Installation Guide](doc/INSTALLATION.md) - Complete installation instructions
 - [NGINX Setup](doc/NGINX-SETUP.md) - Web server configuration
-- [API Documentation](doc/API.md) - REST API reference
-- [User Guide](doc/USER-GUIDE.md) - End-user documentation
 - [Development Guide](doc/DEVELOPMENT.md) - For contributors
+- [Project Summary](doc/PROJECT-SUMMARY.md) - Complete feature overview
+- [v2.0.0 Release Summary](doc/V2-COMPLETION-SUMMARY.md) - Major release details
+- [API Documentation](https://your-server/api/docs) - Interactive Swagger docs (when deployed)
 
 ---
 

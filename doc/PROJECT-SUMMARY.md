@@ -160,10 +160,11 @@ ldap-web-manager/
 ├── doc/                        # Documentation
 │   ├── INSTALLATION.md
 │   ├── NGINX-SETUP.md
-│   └── USER-GUIDE.md
+│   ├── DEVELOPMENT.md
+│   ├── PROJECT-SUMMARY.md
+│   └── V2-COMPLETION-SUMMARY.md
 │
 ├── README.md
-├── DEVELOPMENT.md
 ├── CHANGELOG.md
 └── LICENSE
 ```
@@ -303,12 +304,13 @@ npm run dev
 
 ## 📖 Documentation
 
-1. **README.md** - Project overview and quick start
-2. **INSTALLATION.md** - Complete installation guide
-3. **NGINX-SETUP.md** - Web server configuration
-4. **DEVELOPMENT.md** - Developer guide
-5. **CHANGELOG.md** - Version history
-6. **PROJECT-SUMMARY.md** - This file
+1. **README.md** - Project overview and quick start (root)
+2. **CHANGELOG.md** - Version history (root)
+3. **doc/INSTALLATION.md** - Complete installation guide
+4. **doc/NGINX-SETUP.md** - Web server configuration
+5. **doc/DEVELOPMENT.md** - Developer guide
+6. **doc/PROJECT-SUMMARY.md** - This file (complete feature overview)
+7. **doc/V2-COMPLETION-SUMMARY.md** - v2.0.0 release summary
 
 ---
 
