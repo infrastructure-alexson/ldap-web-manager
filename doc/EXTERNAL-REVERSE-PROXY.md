@@ -9,15 +9,20 @@
 
 This guide covers how to configure LDAP Web Manager when deployed behind an external NGINX reverse proxy that handles SSL/TLS termination.
 
+**Two configuration methods covered**:
+1. **NGINX Proxy Manager** (Recommended for GUI management) 👈 **You are here**
+2. **Manual NGINX Configuration** (For advanced users)
+
 ### Architecture
 
 ```
-[Client] --HTTPS--> [External NGINX (SSL)] --HTTP--> [LDAP Manager NGINX] --HTTP--> [FastAPI Backend]
+[Client] --HTTPS--> [NGINX Proxy Manager (SSL)] --HTTP--> [LDAP Manager NGINX] --HTTP--> [FastAPI Backend]
 ```
 
-**External NGINX**: 
-- SSL/TLS termination
-- Optional: Load balancing, WAF, rate limiting
+**External NGINX Proxy Manager**: 
+- SSL/TLS termination with Let's Encrypt
+- GUI-based configuration
+- Automatic certificate renewal
 - Forwards requests to internal LDAP Manager NGINX
 
 **Internal LDAP Manager NGINX**:
@@ -27,7 +32,343 @@ This guide covers how to configure LDAP Web Manager when deployed behind an exte
 
 ---
 
-## Configuration Changes Needed
+## Quick Start: NGINX Proxy Manager Setup
+
+### Step 1: Configure Internal LDAP Manager NGINX
+
+Use the simplified internal configuration (no SSL needed):
+
+**File**: `/etc/nginx/sites-available/ldap-manager-internal.conf`
+
+```nginx
+# NGINX Configuration for LDAP Web Manager (Behind Proxy Manager)
+# Simplified configuration without SSL
+
+upstream ldap_manager_backend {
+    server 127.0.0.1:8000 fail_timeout=5s max_fails=3;
+    keepalive 32;
+}
+
+server {
+    listen 8080;
+    listen [::]:8080;
+    server_name ldap-manager.eh168.alexson.org;
+    
+    # Trust proxy headers from NGINX Proxy Manager
+    # Replace with your NPM server IP
+    set_real_ip_from 192.168.1.100;  # Your NPM IP address
+    real_ip_header X-Forwarded-For;
+    real_ip_recursive on;
+    
+    root /var/www/ldap-manager;
+    index index.html;
+    
+    access_log /var/log/nginx/ldap-manager-access.log combined;
+    error_log /var/log/nginx/ldap-manager-error.log warn;
+    
+    client_max_body_size 10M;
+    
+    # Health check
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+    
+    # API Backend
+    location /api/ {
+        proxy_pass http://ldap_manager_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+        
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+    
+    # API Docs
+    location ~ ^/(docs|redoc|openapi.json) {
+        proxy_pass http://ldap_manager_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+    }
+    
+    # Static files (React SPA)
+    location / {
+        try_files $uri $uri/ /index.html;
+        
+        # Cache static assets
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+        
+        # Don't cache index.html
+        location = /index.html {
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+        }
+    }
+}
+```
+
+**Enable the configuration**:
+```bash
+sudo ln -sf /etc/nginx/sites-available/ldap-manager-internal.conf /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+### Step 2: Configure NGINX Proxy Manager
+
+#### A. Access NGINX Proxy Manager
+
+1. Navigate to your NPM admin interface (usually `http://npm-server:81`)
+2. Login with your credentials
+
+#### B. Add Proxy Host
+
+1. Click **"Hosts"** → **"Proxy Hosts"** → **"Add Proxy Host"**
+
+2. **Details Tab**:
+   - **Domain Names**: `ldap-manager.eh168.alexson.org`
+   - **Scheme**: `http` (internal connection is not encrypted)
+   - **Forward Hostname / IP**: `192.168.1.10` (your LDAP Manager server IP)
+   - **Forward Port**: `8080`
+   - **Cache Assets**: ✅ Enabled
+   - **Block Common Exploits**: ✅ Enabled
+   - **Websockets Support**: ✅ Enabled
+
+3. **SSL Tab**:
+   - **SSL Certificate**: Select existing or click "Request a new SSL Certificate"
+   - **Force SSL**: ✅ Enabled
+   - **HTTP/2 Support**: ✅ Enabled
+   - **HSTS Enabled**: ✅ Enabled
+   - **HSTS Subdomains**: ✅ Enabled (if you want)
+   - **Use a DNS Challenge**: Optional (if you need wildcard cert)
+   
+   If requesting new certificate:
+   - ✅ Agree to Let's Encrypt Terms
+   - **Email Address**: `your-email@example.com`
+
+4. **Advanced Tab** (Optional but Recommended):
+   
+   ```nginx
+   # Custom NGINX configuration for LDAP Manager
+   
+   # Security Headers
+   add_header X-Frame-Options "SAMEORIGIN" always;
+   add_header X-Content-Type-Options "nosniff" always;
+   add_header X-XSS-Protection "1; mode=block" always;
+   add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+   
+   # Content Security Policy
+   add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';" always;
+   
+   # Proxy Headers (ensure these are passed)
+   proxy_set_header X-Forwarded-Host $host;
+   proxy_set_header X-Forwarded-Port $server_port;
+   
+   # Increase timeouts for long-running operations
+   proxy_connect_timeout 30s;
+   proxy_send_timeout 60s;
+   proxy_read_timeout 60s;
+   
+   # Buffer settings
+   proxy_buffering on;
+   proxy_buffer_size 8k;
+   proxy_buffers 16 8k;
+   
+   # Client upload size
+   client_max_body_size 10M;
+   ```
+
+5. Click **"Save"**
+
+#### C. Access Control (Optional)
+
+If you want to restrict access:
+
+1. Go to **"Access Lists"** → **"Add Access List"**
+2. Configure IP whitelist or authentication
+3. Apply to your Proxy Host
+
+### Step 3: Test the Configuration
+
+#### A. Test Health Check
+```bash
+curl https://ldap-manager.eh168.alexson.org/health
+# Expected: "healthy"
+```
+
+#### B. Test API
+```bash
+curl https://ldap-manager.eh168.alexson.org/api/version
+# Expected: JSON response with version info
+```
+
+#### C. Test Frontend
+Open browser to: `https://ldap-manager.eh168.alexson.org`
+
+**Verify**:
+- ✅ Page loads with HTTPS
+- ✅ Valid SSL certificate
+- ✅ Login page displays
+- ✅ No console errors
+- ✅ API calls work
+
+#### D. Check Headers
+```bash
+curl -I https://ldap-manager.eh168.alexson.org
+# Should see:
+# - Strict-Transport-Security
+# - X-Frame-Options
+# - X-Content-Type-Options
+# - Other security headers
+```
+
+### Step 4: Configure FastAPI for Proxy
+
+Update systemd service to trust proxy headers:
+
+**File**: `/etc/systemd/system/ldap-web-manager-backend.service`
+
+```ini
+[Service]
+ExecStart=/usr/local/bin/uvicorn app.main:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --forwarded-allow-ips='*' \
+    --proxy-headers \
+    --workers 4
+```
+
+Restart backend:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart ldap-web-manager-backend
+```
+
+---
+
+## NGINX Proxy Manager - Additional Configuration
+
+### Rate Limiting
+
+NPM doesn't have built-in rate limiting, but you can add it via Advanced config:
+
+```nginx
+# In Proxy Host → Advanced tab
+
+# Define rate limit zone (add this at the top)
+limit_req_zone $binary_remote_addr zone=ldap_limit:10m rate=10r/s;
+
+# Apply to locations
+location /api/ {
+    limit_req zone=ldap_limit burst=20 nodelay;
+    limit_req_status 429;
+}
+```
+
+### Custom Error Pages
+
+In NPM Advanced tab:
+
+```nginx
+error_page 502 503 504 /maintenance.html;
+location = /maintenance.html {
+    root /data/nginx/error_pages;
+    internal;
+}
+```
+
+### Monitoring
+
+NPM provides:
+- ✅ Access logs per proxy host
+- ✅ Status monitoring
+- ✅ Certificate expiry alerts
+- ✅ Let's Encrypt auto-renewal
+
+View logs: **Hosts** → Click on host → **View Logs**
+
+### Backup NPM Configuration
+
+Backup your NPM configuration regularly:
+
+```bash
+# On NPM server
+docker exec nginx-proxy-manager sh -c 'tar -czf /tmp/npm-backup.tar.gz /data'
+docker cp nginx-proxy-manager:/tmp/npm-backup.tar.gz ./npm-backup-$(date +%Y%m%d).tar.gz
+```
+
+---
+
+## Troubleshooting NGINX Proxy Manager
+
+### Issue: 502 Bad Gateway
+
+**Check**:
+1. Internal NGINX is running: `sudo systemctl status nginx`
+2. Backend is running: `sudo systemctl status ldap-web-manager-backend`
+3. Firewall allows traffic from NPM to internal server
+4. Forward IP and port are correct in NPM
+5. Health check works: `curl http://192.168.1.10:8080/health`
+
+### Issue: SSL Certificate Not Working
+
+**Fix**:
+1. Ensure port 80/443 are open on NPM server
+2. DNS points to NPM server public IP
+3. Let's Encrypt rate limits not exceeded
+4. Try DNS challenge if HTTP challenge fails
+
+### Issue: WebSocket Connections Fail
+
+**Fix**: Ensure "Websockets Support" is enabled in NPM proxy host settings
+
+### Issue: Upload Fails (413 Error)
+
+**Fix**: Add to Advanced tab in NPM:
+```nginx
+client_max_body_size 50M;
+```
+
+### Issue: Slow Performance
+
+**Check**:
+1. NPM server resources (CPU, RAM)
+2. Network latency between NPM and internal server
+3. Enable "Cache Assets" in NPM
+4. Check internal NGINX logs for slow backends
+
+### View NPM Logs
+
+**Via Docker**:
+```bash
+docker logs nginx-proxy-manager -f
+```
+
+**Via NPM UI**:
+Hosts → Your Proxy Host → View Logs
+
+---
+
+## Manual NGINX Configuration (Alternative)
+
+If you're not using NGINX Proxy Manager and configuring NGINX manually, see the detailed configuration below.
+
+---
+
+## Configuration Changes Needed (Manual NGINX)
 
 ### 1. Modified Internal NGINX Configuration
 
