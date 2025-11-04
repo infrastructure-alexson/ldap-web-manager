@@ -84,6 +84,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2025-11-04
+
+### Added
+
+**DNS Management**
+- DNS zone CRUD API (create, read, update, delete)
+- DNS record listing API
+- Zone models with full SOA record support
+- Automatic SOA serial number generation (YYYYMMDDnn format)
+- Support for multiple record types (A, AAAA, CNAME, MX, TXT, PTR, SRV, NS)
+- DNS zones page with search and pagination
+- Dashboard integration showing DNS zone counts
+- BIND 9 DLZ LDAP backend support
+
+**User Management UI**
+- Complete user create/edit modal
+- Full form validation with error messages
+- Password complexity validation (12+ chars, uppercase, lowercase, number, special)
+- Client-side validation before API calls
+- Permission-based action buttons
+- Delete user with confirmation dialog
+- Group membership display in user table
+- Enhanced search and pagination
+
+### Improved
+
+- Dashboard now fetches real statistics for users, groups, and DNS zones
+- Enhanced table layouts with better responsiveness
+- Improved error handling across all pages
+- Better loading states and user feedback
+
+---
+
 ## [1.1.0] - 2025-11-04
 
 ### Added
