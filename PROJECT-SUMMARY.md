@@ -436,7 +436,7 @@ MIT License - See LICENSE file
 
 **Built for eh168.alexson.org infrastructure** 🚀
 
-**Version**: 1.2.0  
+**Version**: 2.0.0  
 **Status**: Production Ready ✅  
-**Last Updated**: 2025-11-04
+**Last Updated**: November 4, 2025
 

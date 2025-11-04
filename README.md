@@ -329,3 +329,7 @@ MIT License - See [LICENSE](LICENSE) file for details
 
 **Built for the eh168.alexson.org infrastructure** 🚀
 
+**Version**: 2.0.0  
+**Release Date**: November 4, 2025  
+**Status**: Production Ready  
+**Repository**: https://github.com/infrastructure-alexson/ldap-web-manager

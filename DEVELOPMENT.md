@@ -549,3 +549,9 @@ For development deployment:
 - **Discussions**: https://github.com/infrastructure-alexson/ldap-web-manager/discussions
 - **Email**: admin@eh168.alexson.org
 
+---
+
+**LDAP Web Manager Development Guide**  
+**Version**: 2.0.0  
+**Last Updated**: November 4, 2025  
+**Repository**: https://github.com/infrastructure-alexson/ldap-web-manager
