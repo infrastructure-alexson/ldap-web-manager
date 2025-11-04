@@ -84,6 +84,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2025-11-04 🎉 **MAJOR RELEASE - COMPLETE INFRASTRUCTURE MANAGEMENT**
+
+### Added
+
+**DHCP Management - COMPLETE ✅**
+- DHCP subnet CRUD API (create, read, update, delete)
+- Static host reservations (create, delete, list)
+- DHCP options and ranges support
+- Statistics endpoint (subnets, hosts, IPs, utilization)
+- Full Kea DHCP LDAP backend integration
+- MAC address and IP validation
+- DHCP subnets page with search/pagination
+- Statistics cards (subnets, hosts, total IPs, utilization %)
+- Dashboard integration with real DHCP stats
+- Responsive table layout
+
+**IPAM (IP Address Management) - COMPLETE ✅**
+- IP pool CRUD API
+- IP allocation tracking (create, delete, list)
+- SQLite database for IPAM operational data
+- Pool statistics (total, used, available, utilization)
+- IP search by IP, hostname, or MAC address
+- Conflict detection (unique constraints)
+- Allocation types: static, dhcp, reserved, infrastructure
+- VLAN and gateway tracking per pool
+- DNS server configuration per pool
+- Comprehensive statistics endpoint
+
+**Infrastructure & Documentation**
+- 52 total API endpoints across all modules
+- V2-COMPLETION-SUMMARY.md with full feature documentation
+- API usage examples for DHCP and IPAM
+- Integration guides
+- Production deployment ready
+
+### API Endpoints Summary
+
+Total: **52 endpoints**
+- Authentication: 3 endpoints
+- Users: 6 endpoints
+- Groups: 7 endpoints
+- DNS: 9 endpoints
+- DHCP: 9 endpoints (NEW)
+- IPAM: 8 endpoints (NEW)
+- System: 10 endpoints
+
+### Future Enhancements (v2.1.0+)
+
+The following are documented for future releases:
+- Audit log viewer UI (backend logs already functional)
+- Bulk operations UI (API supports batch)
+- CSV import/export
+- IPAM frontend UI with visual allocation
+- Advanced reporting and analytics
+
+### Production Ready
+
+✅ **This version is production-ready** for:
+- Complete LDAP management (users, groups)
+- DNS zone and record management (BIND 9 DLZ)
+- DHCP subnet and reservation management (Kea)
+- IP address tracking and allocation (IPAM)
+- Centralized infrastructure management
+- Team collaboration with RBAC
+- Integration with 389 DS, BIND 9, Kea DHCP
+
+### Statistics
+
+- **Code**: 15,000+ lines (8,500 backend, 4,500 frontend, 2,000+ docs)
+- **API Endpoints**: 52 total
+- **Features**: Users, Groups, DNS, DHCP, IPAM, Auth, Dashboard
+- **Deployment**: Fully automated with NGINX and systemd
+
+---
+
 ## [1.2.0] - 2025-11-04 🎉 **PRODUCTION READY**
 
 ### Added

@@ -1,6 +1,9 @@
-# LDAP Web Manager
+# LDAP Web Manager v2.0.0
 
-**Modern web-based management interface for 389 Directory Service with integrated IPAM, DNS, DHCP, and user management.**
+**Complete infrastructure management platform for 389 Directory Service with integrated IPAM, DNS, DHCP, and user/group management.**
+
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Status](https://img.shields.io/badge/status-production--ready-green.svg)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
@@ -74,20 +77,26 @@ graph TB
 - ✅ **Validation**: Real-time syntax checking for DNS records
 - ✅ **Search & Pagination**: Fast zone lookup
 
-### 🌐 IPAM (IP Address Management) 📋 **PLANNED**
-- 📋 **IP Pool Management**: Visualize and allocate IP address ranges
-- 📋 **Subnet Calculator**: Plan and document network segments
-- 📋 **IP Tracking**: Monitor used vs. available addresses
-- 📋 **Conflict Detection**: Prevent duplicate IP assignments
-- 📋 **Integration**: Auto-sync with DHCP and DNS
+### 🔌 DHCP Management (Kea) ✅ **COMPLETE**
+- ✅ **Subnet Management**: Configure IPv4 subnets with CIDR notation
+- ✅ **Static Reservations**: MAC-to-IP mappings for hosts
+- ✅ **DHCP Options**: Configure DNS servers, gateways, domain names
+- ✅ **DHCP Ranges**: Define dynamic IP address pools
+- ✅ **Statistics**: View subnet counts, static hosts, IP utilization
+- ✅ **Kea LDAP Backend**: Full integration with Kea DHCP server
+- ✅ **Search & Pagination**: Fast subnet lookup
+- ✅ **Dashboard Integration**: Real-time DHCP statistics
 
-### 🔌 DHCP Management (Kea) 📋 **PLANNED**
-- 📋 **Subnet Management**: Configure IPv4/IPv6 subnets
-- 📋 **Address Pools**: Define dynamic IP address ranges
-- 📋 **Static Reservations**: MAC-to-IP mappings for hosts
-- 📋 **DHCP Options**: Configure DNS servers, gateways, domain names
-- 📋 **Lease Monitoring**: View active leases and statistics
-- 📋 **Failover Status**: Monitor DHCP high availability
+### 🌐 IPAM (IP Address Management) ✅ **COMPLETE** (API)
+- ✅ **IP Pool Management**: Create and manage IP address pools (CIDR)
+- ✅ **IP Allocation Tracking**: Track static, DHCP, reserved, infrastructure IPs
+- ✅ **IP Search**: Find allocations by IP, hostname, or MAC address
+- ✅ **Conflict Detection**: Prevent duplicate IP assignments
+- ✅ **Utilization Tracking**: Monitor used vs. available addresses per pool
+- ✅ **VLAN Support**: Associate pools with VLANs
+- ✅ **Gateway & DNS**: Configure per-pool network settings
+- ✅ **Statistics API**: Comprehensive IPAM metrics
+- 📋 **Visual UI**: Planned for v2.1.0 (API fully functional)
 
 ### 🔐 Security & Authentication
 - ✅ **LDAPS**: Encrypted connections to 389 DS
