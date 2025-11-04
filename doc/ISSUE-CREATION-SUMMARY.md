@@ -50,10 +50,10 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 **Iteration**: Nov 15 - Dec 15, 2025
 
 #### IPAM Visual Interface (4 issues)
-1. **IP Allocation Map** - Visual grid with color-coded status, click to allocate/release
-2. **Subnet Calculator** - CIDR planning tool with split/merge capability
-3. **IP Search & Discovery** - Advanced search by IP/hostname/MAC with export
-4. **Pool Management UI** - Complete CRUD interface for IP pools
+1. **Subnet Calculator** (#1) - CIDR planning tool with split/merge capability
+2. **IP Search & Discovery** (#2) - Advanced search by IP/hostname/MAC with export
+3. **Pool Management UI** (#3) - Complete CRUD interface for IP pools
+4. **IP Allocation Map** (#43) - Visual grid with color-coded status, click to allocate/release ⭐ HIGH PRIORITY
 
 #### Audit & Operations (5 issues)
 5. **Audit Log Viewer** - Web-based log viewer with filtering and export
@@ -150,11 +150,11 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 - **Security**: 3 issues
 
 ### By Priority
-- **High Priority**: 4 issues (IPAM Visual Interface)
-- **Normal Priority**: 39 issues
+- **High Priority**: 4 issues (IPAM Visual Interface - including #43)
+- **Normal Priority**: 40 issues
 
 ### Total
-- **43 issues created**
+- **44 issues created**
 - **All added to project**
 - **All properly labeled**
 
@@ -242,7 +242,7 @@ Two PowerShell scripts for managing issues:
 
 **Created**: 2025-11-03  
 **Status**: ✅ Complete  
-**Issues Created**: 43  
+**Issues Created**: 44  
 **Labels Created**: 14  
 **Next**: Assign to iterations in project settings
 

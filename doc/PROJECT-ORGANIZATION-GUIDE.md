@@ -13,7 +13,7 @@ This guide provides instructions for organizing the LDAP Web Manager project boa
 
 ### Project Separation
 
-- **Project #1** - Feature enhancements, roadmap items, new functionality (43 issues spanning v2.1.0 - v3.1.0)
+- **Project #1** - Feature enhancements, roadmap items, new functionality (44 issues spanning v2.1.0 - v3.1.0)
 - **Project #2** - Bug fixes, defects, issues with existing functionality
 
 **Important**: All new bugs should be tracked on Project #2, not Project #1.
@@ -28,10 +28,10 @@ This guide provides instructions for organizing the LDAP Web Manager project boa
 
 | Issue # | Title | Priority |
 |---------|-------|----------|
-| #1 | [v2.1.0] IPAM Visual Interface - IP Allocation Map | High |
-| #2 | [v2.1.0] IPAM Visual Interface - Subnet Calculator | High |
-| #3 | [v2.1.0] IPAM Visual Interface - IP Search & Discovery | High |
-| #4 | [v2.1.0] IPAM Visual Interface - Pool Management UI | High |
+| #1 | [v2.1.0] IPAM Visual Interface - Subnet Calculator | Normal |
+| #2 | [v2.1.0] IPAM Visual Interface - IP Search & Discovery | Normal |
+| #3 | [v2.1.0] IPAM Visual Interface - Pool Management UI | Normal |
+| #43 | [v2.1.0] IPAM Visual Interface - IP Allocation Map | High |
 | #5 | [v2.1.0] Audit Log Viewer | Normal |
 | #6 | [v2.1.0] Bulk User Operations | Normal |
 | #7 | [v2.1.0] Bulk DNS Operations | Normal |
@@ -247,10 +247,10 @@ Set Priority to "High" for issues:
 3. Finally by issue number (ascending)
 
 **Recommended Order for v2.1.0**:
-1. #1 (IPAM - High)
-2. #2 (IPAM - High)
-3. #3 (IPAM - High)
-4. #4 (IPAM - High)
+1. #43 (IPAM IP Allocation Map - High)
+2. #1 (IPAM Subnet Calculator)
+3. #2 (IPAM IP Search)
+4. #3 (IPAM Pool Management)
 5. #5 (Audit Log)
 6. #6 (Bulk Users)
 7. #7 (Bulk DNS)
@@ -452,7 +452,7 @@ When in doubt, start with `bug` label and let triage reassign if needed.
 ---
 
 **Last Updated**: 2025-11-03  
-**Total Issues**: 43  
+**Total Issues**: 44  
 **Versions**: 5 (v2.1.0 - v3.1.0)  
 **Planning Horizon**: 9 months (Nov 2025 - Aug 2026)
 
