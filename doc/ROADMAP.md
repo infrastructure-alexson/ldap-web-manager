@@ -207,10 +207,54 @@ gantt
 
 ---
 
-## v2.2.0 - IPv6 & Monitoring 🌐
+## v2.2.0 - Container Deployment & Monitoring 🐳
 
 **Target Release**: Early 2026  
-**Focus**: IPv6 support and infrastructure monitoring
+**Focus**: Container deployment, IPv6 support, and infrastructure monitoring
+
+### Container Deployment ⭐ **HIGH PRIORITY**
+
+**Status**: Modern deployment requirement for cloud-native environments
+
+#### Docker & Podman Support
+
+- **Official Container Images**:
+  - Multi-stage Dockerfiles for optimized image size
+  - Separate images for backend (FastAPI) and frontend (NGINX)
+  - Published to Docker Hub and GitHub Container Registry
+  - Multi-architecture builds (amd64, arm64)
+  - Automated builds on release tags
+  
+- **Docker Compose**:
+  - Full-stack deployment with single command
+  - Includes PostgreSQL, Redis, backend, frontend
+  - Health checks for all services
+  - Volume mounts for persistence
+  - Development and production configurations
+  
+- **Podman Compatibility**:
+  - Rootless container support
+  - SELinux-compatible volumes
+  - systemd integration for auto-start
+  - pod man-compose.yml variant
+  - Compatible with existing Podman infrastructure
+  
+- **Container Features**:
+  - Environment variable configuration
+  - Secrets management
+  - Health check endpoints
+  - Graceful shutdown handling
+  - Resource limits and requests
+  - Log aggregation support
+
+#### Benefits
+
+✅ **Portability**: Deploy anywhere containers run  
+✅ **Consistency**: Same environment across dev/test/prod  
+✅ **Scalability**: Easy horizontal scaling  
+✅ **Isolation**: Clean service separation  
+✅ **DevOps**: CI/CD pipeline integration  
+✅ **Quick Start**: One-command deployment  
 
 ### IPv6 Support
 
@@ -356,33 +400,70 @@ gantt
   - Self-service user portals
   - Approval workflows for cross-tenant requests
 
+### Kubernetes & OpenShift Deployment
+
+**Prerequisites**: Container images (v2.2.0), PostgreSQL and Redis (v2.1.0)
+
+#### Kubernetes Manifests
+
+- **Deployments**: Separate for backend, frontend
+- **Services**: ClusterIP, LoadBalancer, NodePort
+- **Ingress**: NGINX, Traefik, or cloud provider ingress
+- **ConfigMaps**: Application configuration
+- **Secrets**: Credentials and sensitive data
+- **PersistentVolumeClaims**: Database and Redis persistence
+- **HorizontalPodAutoscaler**: Auto-scaling based on CPU/memory
+- **Kustomize**: Environment-specific overlays
+
+#### Helm Chart
+
+- **Values-driven configuration**: Customize via values.yaml
+- **Dependency management**: PostgreSQL, Redis charts
+- **Templating**: Flexible deployment options
+- **Hooks**: Pre-install, post-upgrade hooks
+- **Chart Museum**: Helm repository hosting
+- **Version pinning**: Specific image tags
+
+#### OpenShift Deployment
+
+- **Template**: One-click deployment from catalog
+- **Route**: Native OpenShift ingress with TLS
+- **ImageStreams**: Automatic rebuild triggers
+- **DeploymentConfig**: OpenShift-native deployments
+- **SecurityContextConstraints**: Proper permissions
+- **S2I (Source-to-Image)**: Build from source
+- **Project isolation**: Multi-tenancy support
+
 ### High Availability
 
-**Prerequisites**: PostgreSQL and Redis (implemented in v2.1.0)
+**Prerequisites**: PostgreSQL and Redis (v2.1.0), Container deployment (v2.2.0)
 
 - **Active-Active Backend**: 
   - Multiple FastAPI instances with load balancing
   - Shared PostgreSQL database for state
   - Redis for distributed sessions
-  - Horizontal pod autoscaling in Kubernetes
+  - Horizontal pod autoscaling in Kubernetes/OpenShift
 
 - **Database HA**: 
   - PostgreSQL replication (primary-standby)
-  - Automatic failover with Patroni
+  - Automatic failover with Patroni or cloud-native operators
   - Connection pooling with PgBouncer
   - Backup and point-in-time recovery
+  - Cloud database services (RDS, Cloud SQL)
 
 - **Session Management**: 
   - Redis Sentinel for HA sessions
   - Redis Cluster for horizontal scaling
   - Session replication across instances
   - Graceful session failover
+  - Cloud Redis services (ElastiCache, Cloud Memorystore)
 
 - **Health Checks**: 
   - Kubernetes readiness probes (API, database, LDAP)
   - Liveness probes for auto-restart
   - Startup probes for slow initialization
   - Custom health check endpoints
+  - OpenShift health monitoring
 
 ### Advanced RBAC
 
@@ -476,10 +557,34 @@ gantt
 
 ### Cloud-Native Enhancements
 
-- **Kubernetes Operator**: Deploy and manage via K8s custom resources
-- **Helm Charts**: Production-ready Kubernetes deployment
-- **Service Mesh Integration**: Istio/Linkerd support
-- **Cloud Storage**: S3/GCS for backups and exports
+**Prerequisites**: Container deployment (v2.2.0), Kubernetes manifests (v3.0.0)
+
+- **Kubernetes Operator**: 
+  - Custom Resource Definitions (CRDs)
+  - Automated deployment and lifecycle management
+  - Self-healing capabilities
+  - Automated upgrades and rollbacks
+  - Operator SDK or Kubebuilder
+  
+- **Advanced Helm Features**:
+  - Helm chart dependency updates
+  - Chart testing framework
+  - Chart signing and verification
+  - Multi-cluster deployment
+  - GitOps integration (ArgoCD, Flux)
+  
+- **Service Mesh Integration**: 
+  - Istio sidecar injection
+  - Linkerd traffic splitting
+  - mTLS between services
+  - Traffic management policies
+  - Observability integration
+  
+- **Cloud Storage**: 
+  - S3/GCS for backups and exports
+  - Object storage for audit logs
+  - Cloud-native backup solutions
+  - Cross-region replication
 
 ### Mobile Application
 
@@ -521,7 +626,13 @@ gantt
 #### DevOps
 
 - **CI/CD Pipelines**: GitHub Actions for automated testing/deployment
-- **Container Images**: Official Docker images on Docker Hub
+- **Container Deployment** (v2.2.0):
+  - Official Docker/Podman images on Docker Hub and GitHub Container Registry
+  - Multi-architecture support (amd64, arm64)
+  - docker-compose.yml for full stack deployment
+  - Podman compatibility with rootless containers
+  - Kubernetes manifests and Helm charts (v3.0.0)
+  - OpenShift template and Route configuration (v3.0.0)
 - **Deployment Automation**: One-command production deployment
 - **Backup/Restore**: Automated backup verification
 - **Documentation**: Auto-generated API docs from code
