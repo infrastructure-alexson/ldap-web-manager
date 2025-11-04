@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] - November 4, 2025
+## [1.0.0] - 2025-11-03
 
 ### Initial Release
 
@@ -84,7 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [2.0.0] - November 4, 2025 🎉 **MAJOR RELEASE - COMPLETE INFRASTRUCTURE MANAGEMENT**
+## [2.0.0] - 2025-11-03 🎉 **MAJOR RELEASE - COMPLETE INFRASTRUCTURE MANAGEMENT**
 
 ### Added
 
@@ -159,7 +159,7 @@ The following are documented for future releases:
 
 ---
 
-## [1.2.0] - November 4, 2025 🎉 **PRODUCTION READY**
+## [1.2.0] - 2025-11-03 🎉 **PRODUCTION READY**
 
 ### Added
 
@@ -220,7 +220,7 @@ The following are documented for future releases:
 
 ---
 
-## [1.1.0] - November 4, 2025
+## [1.1.0] - 2025-11-03
 
 ### Added
 
@@ -294,5 +294,5 @@ https://github.com/infrastructure-alexson/ldap-web-manager/issues
 
 **LDAP Web Manager Changelog**  
 **Current Version**: 2.0.0  
-**Last Updated**: November 4, 2025  
+**Last Updated**: 2025-11-03  
 **Repository**: https://github.com/infrastructure-alexson/ldap-web-manager

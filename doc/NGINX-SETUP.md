@@ -457,5 +457,5 @@ sudo journalctl -u nginx -f
 
 **LDAP Web Manager NGINX Setup Guide**  
 **Version**: 2.0.0  
-**Last Updated**: November 4, 2025  
+**Last Updated**: 2025-11-03  
 **Repository**: https://github.com/infrastructure-alexson/ldap-web-manager
