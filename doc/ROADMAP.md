@@ -90,6 +90,36 @@ gantt
 - **Bulk DNS Records**: Import zone files, export records
 - **Bulk IP Allocation**: Allocate ranges from CSV
 
+### Service Account Management
+
+**Status**: New feature, not yet implemented
+
+- **Dedicated Service Account UI**: Manage LDAP service accounts in `ou=ServiceAccounts`
+  - Separate from regular user accounts
+  - Proper LDAP objectClasses (`simpleSecurityObject`, `organizationalRole`)
+  - Simplified attributes (no shell, home directory, etc.)
+
+- **Service Account Operations**:
+  - Create/edit/delete service accounts
+  - Secure password generation (32+ characters)
+  - Password rotation with audit trail
+  - Enable/disable without deletion
+  - Search and filter functionality
+
+- **Documentation & Security**:
+  - Service account purpose and owner fields
+  - Usage notes and documentation
+  - Admin-only access by default
+  - Audit logging for all operations
+  - One-time password display on creation/rotation
+
+- **Use Cases**:
+  - Manage existing service accounts (sssd, dhcp, dns, migrate)
+  - Create service accounts for applications
+  - Track and audit service account usage
+  - Rotate credentials on schedule
+  - Compliance and security monitoring
+
 ### Enhanced UI Components
 
 - **User Profile Page**: View/edit detailed user information

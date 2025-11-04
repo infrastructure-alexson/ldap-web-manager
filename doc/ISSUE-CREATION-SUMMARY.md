@@ -22,7 +22,7 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 ### Version Labels
 | Label | Description | Color | Count |
 |-------|-------------|-------|-------|
-| v2.1.0 | Features planned for v2.1.0 release | #0366d6 | 15 issues |
+| v2.1.0 | Features planned for v2.1.0 release | #0366d6 | 16 issues |
 | v2.2.0 | Features planned for v2.2.0 release | #1d76db | 10 issues |
 | v2.3.0 | Features planned for v2.3.0 release | #2ea44f | 4 issues |
 | v3.0.0 | Features planned for v3.0.0 release | #fbca04 | 6 issues |
@@ -45,7 +45,7 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 
 ## Issues Created by Version
 
-### v2.1.0 - UI Completion & User Experience (15 issues)
+### v2.1.0 - UI Completion & User Experience (16 issues)
 
 **Iteration**: Nov 15 - Dec 15, 2025
 
@@ -55,22 +55,23 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 3. **IP Search & Discovery** - Advanced search by IP/hostname/MAC with export
 4. **Pool Management UI** - Complete CRUD interface for IP pools
 
-#### Audit & Operations (4 issues)
+#### Audit & Operations (5 issues)
 5. **Audit Log Viewer** - Web-based log viewer with filtering and export
 6. **Bulk User Operations** - CSV/LDIF import, bulk password reset, group membership
 7. **Bulk DNS Operations** - Zone file import/export, bulk record creation
 8. **Bulk IP Allocation** - CSV import for IP allocations
+9. **Service Account Management** - Dedicated UI for LDAP service accounts with password rotation
 
 #### Enhanced UI Components (6 issues)
-9. **User Profile Page** - Detailed user view with full edit capabilities
-10. **Group Details Page** - Member management with nested group support
-11. **DNS Zone Editor** - Syntax-highlighted zone file editor
-12. **DHCP Subnet Wizard** - Step-by-step subnet configuration wizard
-13. **Dashboard Widgets** - Customizable draggable dashboard layout
-14. **Dark Mode** - Light/dark theme toggle with persistence
+10. **User Profile Page** - Detailed user view with full edit capabilities
+11. **Group Details Page** - Member management with nested group support
+12. **DNS Zone Editor** - Syntax-highlighted zone file editor
+13. **DHCP Subnet Wizard** - Step-by-step subnet configuration wizard
+14. **Dashboard Widgets** - Customizable draggable dashboard layout
+15. **Dark Mode** - Light/dark theme toggle with persistence
 
 #### Documentation (1 issue)
-15. **Documentation Updates** - User guide, screenshots, video tutorials, API examples
+16. **Documentation Updates** - User guide, screenshots, video tutorials, API examples
 
 ---
 
@@ -142,18 +143,18 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 ### By Type
 - **Frontend**: 18 issues
 - **Backend**: 15 issues
-- **Backend + Frontend**: 9 issues
+- **Backend + Frontend**: 10 issues
 - **Documentation**: 1 issue
 - **Integration**: 4 issues
 - **DevOps**: 1 issue
-- **Security**: 2 issues
+- **Security**: 3 issues
 
 ### By Priority
 - **High Priority**: 4 issues (IPAM Visual Interface)
-- **Normal Priority**: 38 issues
+- **Normal Priority**: 39 issues
 
 ### Total
-- **42 issues created**
+- **43 issues created**
 - **All added to project**
 - **All properly labeled**
 
@@ -163,7 +164,7 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 
 | Version | Iteration Dates | Duration | Issues |
 |---------|----------------|----------|--------|
-| v2.1.0 | Nov 15 - Dec 15, 2025 | 30 days | 15 |
+| v2.1.0 | Nov 15 - Dec 15, 2025 | 30 days | 16 |
 | v2.2.0 | Jan 1 - Feb 15, 2026 | 45 days | 10 |
 | v2.3.0 | Mar 1 - Apr 15, 2026 | 45 days | 4 |
 | v3.0.0 | May 1 - Jun 30, 2026 | 60 days | 6 |
@@ -241,7 +242,7 @@ Two PowerShell scripts for managing issues:
 
 **Created**: 2025-11-03  
 **Status**: ✅ Complete  
-**Issues Created**: 42  
+**Issues Created**: 43  
 **Labels Created**: 14  
 **Next**: Assign to iterations in project settings
 
