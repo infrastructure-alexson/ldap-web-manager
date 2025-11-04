@@ -1,0 +1,268 @@
+# LDAP Web Manager - Configuration File
+# Copy this file to app-config.yaml and customize for your environment
+
+app:
+  name: "LDAP Web Manager"
+  environment: "production"  # production, development, testing
+  debug: false
+  secret_key: "${SECRET_KEY}"  # Generate with: openssl rand -hex 32
+  
+server:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  reload: false  # Set to true in development
+
+# LDAP Configuration
+ldap:
+  servers:
+    primary: "ldaps://ldap1.svc.eh168.alexson.org:636"
+    secondary: "ldaps://ldap2.svc.eh168.alexson.org:636"
+  
+  base_dn: "dc=eh168,dc=alexson,dc=org"
+  
+  # Service Account for Web Manager
+  bind_dn: "cn=webmanager,ou=ServiceAccounts,dc=eh168,dc=alexson,dc=org"
+  bind_password: "${LDAP_WEBMANAGER_PASSWORD}"  # Use environment variable
+  
+  # Organizational Units
+  people_ou: "ou=People,dc=eh168,dc=alexson,dc=org"
+  groups_ou: "ou=Groups,dc=eh168,dc=alexson,dc=org"
+  service_accounts_ou: "ou=ServiceAccounts,dc=eh168,dc=alexson,dc=org"
+  dns_ou: "ou=DNS,ou=Services,dc=eh168,dc=alexson,dc=org"
+  dhcp_ou: "ou=DHCP,ou=Services,dc=eh168,dc=alexson,dc=org"
+  
+  # Connection Settings
+  timeout: 30
+  network_timeout: 10
+  pooling:
+    enabled: true
+    size: 10
+    lifetime: 3600
+  
+  # TLS Settings
+  tls:
+    enabled: true
+    verify: true  # Set to false for self-signed certificates in development
+    ca_cert: "/etc/pki/tls/certs/ca-bundle.crt"
+
+# Authentication & Security
+auth:
+  jwt_secret: "${JWT_SECRET}"  # Generate with: openssl rand -hex 32
+  jwt_algorithm: "HS256"
+  access_token_expire_minutes: 60
+  refresh_token_expire_days: 30
+  
+  # Password Policy
+  password_policy:
+    min_length: 12
+    require_uppercase: true
+    require_lowercase: true
+    require_numbers: true
+    require_special: true
+    special_chars: "!@#$%^&*()_+-=[]{}|;:,.<>?"
+
+# Role-Based Access Control
+rbac:
+  roles:
+    admin:
+      description: "Full access to all resources"
+      permissions:
+        - "users:*"
+        - "groups:*"
+        - "dns:*"
+        - "dhcp:*"
+        - "ipam:*"
+        - "audit:read"
+    
+    operator:
+      description: "Can manage resources but not delete"
+      permissions:
+        - "users:read"
+        - "users:write"
+        - "groups:read"
+        - "groups:write"
+        - "dns:read"
+        - "dns:write"
+        - "dhcp:read"
+        - "dhcp:write"
+        - "ipam:read"
+        - "ipam:write"
+    
+    readonly:
+      description: "Read-only access to all resources"
+      permissions:
+        - "users:read"
+        - "groups:read"
+        - "dns:read"
+        - "dhcp:read"
+        - "ipam:read"
+
+# DNS Configuration
+dns:
+  # BIND 9 Integration
+  bind:
+    enabled: true
+    default_ttl: 3600
+    default_refresh: 10800
+    default_retry: 3600
+    default_expire: 604800
+    default_minimum: 86400
+    
+  # Supported Record Types
+  record_types:
+    - A
+    - AAAA
+    - CNAME
+    - MX
+    - TXT
+    - PTR
+    - SRV
+    - NS
+    - SOA
+  
+  # Validation
+  validation:
+    check_mx_priority: true
+    check_ptr_reverse: true
+    warn_on_cname_chain: true
+
+# DHCP Configuration
+dhcp:
+  # Kea DHCP Integration
+  kea:
+    enabled: true
+    default_lease_time: 86400  # 24 hours
+    max_lease_time: 604800     # 7 days
+    
+  # Subnets
+  subnets:
+    default_gateway: true
+    default_dns_servers:
+      - 192.168.1.4
+      - 192.168.1.5
+    default_domain: "eh168.alexson.org"
+
+# IPAM Configuration
+ipam:
+  # IP Address Management
+  networks:
+    # These are your management networks
+    - name: "Management Network"
+      cidr: "192.168.1.0/24"
+      description: "Infrastructure services"
+    
+    - name: "Internal Network"
+      cidr: "10.0.0.0/8"
+      description: "Internal systems"
+  
+  # Reserved Ranges (never auto-assign)
+  reserved_ranges:
+    - "192.168.1.1-192.168.1.10"  # Infrastructure
+    - "10.0.0.1-10.0.0.10"         # Gateway range
+  
+  # Conflict Detection
+  conflict_detection:
+    enabled: true
+    check_dns: true
+    check_dhcp: true
+    check_ping: false  # Requires ICMP permissions
+
+# Audit Logging
+audit:
+  enabled: true
+  database: "/var/lib/ldap-web-manager/audit.db"
+  retention_days: 365
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  
+  # What to log
+  events:
+    - user_login
+    - user_logout
+    - user_create
+    - user_modify
+    - user_delete
+    - group_create
+    - group_modify
+    - group_delete
+    - dns_zone_create
+    - dns_zone_modify
+    - dns_zone_delete
+    - dns_record_create
+    - dns_record_modify
+    - dns_record_delete
+    - dhcp_subnet_create
+    - dhcp_subnet_modify
+    - dhcp_subnet_delete
+    - dhcp_host_create
+    - dhcp_host_modify
+    - dhcp_host_delete
+
+# API Rate Limiting
+rate_limiting:
+  enabled: true
+  requests_per_minute: 60
+  burst: 100
+  
+# CORS (for development)
+cors:
+  enabled: true
+  origins:
+    - "https://ldap-manager.eh168.alexson.org"
+    - "http://localhost:5173"  # Vite dev server
+  allow_credentials: true
+
+# Caching
+cache:
+  enabled: true
+  backend: "memory"  # memory, redis
+  ttl: 300  # 5 minutes
+  
+  # Redis (if backend: redis)
+  redis:
+    host: "localhost"
+    port: 6379
+    db: 0
+    password: ""
+
+# Notifications (future feature)
+notifications:
+  enabled: false
+  smtp:
+    host: "smtp.eh168.alexson.org"
+    port: 587
+    use_tls: true
+    username: "ldap-manager@eh168.alexson.org"
+    password: "${SMTP_PASSWORD}"
+  
+  admin_email: "admin@eh168.alexson.org"
+
+# Backup & Maintenance
+maintenance:
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    retention_days: 30
+    location: "/var/backups/ldap-web-manager"
+  
+  health_check:
+    enabled: true
+    interval_seconds: 60
+    check_ldap: true
+    check_dns: true
+    check_dhcp: true
+
+# Feature Flags
+features:
+  user_management: true
+  group_management: true
+  dns_management: true
+  dhcp_management: true
+  ipam: true
+  audit_logs: true
+  bulk_import: true
+  bulk_export: true
+  password_reset: true
+  two_factor_auth: false  # Future feature
+  api_keys: false         # Future feature
+
