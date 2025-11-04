@@ -235,7 +235,7 @@ Two PowerShell scripts for managing issues:
 - **All Issues**: https://github.com/infrastructure-alexson/ldap-web-manager/issues
 - **Project Board**: https://github.com/orgs/infrastructure-alexson/projects/1
 - **Roadmap**: [ROADMAP.md](ROADMAP.md)
-- **Changelog**: [CHANGELOG.md](CHANGELOG.md)
+- **Changelog**: [../CHANGELOG.md](../CHANGELOG.md)
 
 ---
 
