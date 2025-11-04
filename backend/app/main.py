@@ -15,7 +15,7 @@ import logging
 from pathlib import Path
 
 # Import routers
-from app.api import auth, users, groups, dns, dhcp
+from app.api import auth, users, groups, dns, dhcp, ipam
 
 # Configure logging
 logging.basicConfig(
@@ -201,8 +201,7 @@ app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(groups.router, prefix="/api/groups", tags=["Groups"])
 app.include_router(dns.router, prefix="/api/dns", tags=["DNS"])
 app.include_router(dhcp.router, prefix="/api/dhcp", tags=["DHCP"])
-# TODO: Add more routers as they're developed
-# app.include_router(ipam.router, prefix="/api/ipam", tags=["IPAM"])
+app.include_router(ipam.router, prefix="/api/ipam", tags=["IPAM"])
 
 
 if __name__ == "__main__":
