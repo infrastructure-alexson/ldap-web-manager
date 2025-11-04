@@ -18,6 +18,7 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 **Latest Updates**: 
 - Added issue #44 for PostgreSQL backend and Redis session management (2025-11-04)
 - Added issue #45 for Container Deployment (Docker, Podman, Kubernetes, OpenShift) (2025-11-04)
+- Added issue #46 for LDAP Infrastructure Suite - unified deployment of all components (2025-11-04)
 
 ---
 
@@ -29,7 +30,7 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 | v2.1.0 | Features planned for v2.1.0 release | #0366d6 | 17 issues |
 | v2.2.0 | Features planned for v2.2.0 release | #1d76db | 11 issues |
 | v2.3.0 | Features planned for v2.3.0 release | #2ea44f | 4 issues |
-| v3.0.0 | Features planned for v3.0.0 release | #fbca04 | 6 issues |
+| v3.0.0 | Features planned for v3.0.0 release | #fbca04 | 7 issues |
 | v3.1.0 | Features planned for v3.1.0 release | #d4c5f9 | 7 issues |
 | v3.2.0 | Features planned for v3.2.0+ release | #c5def5 | 0 issues (future) |
 
@@ -119,16 +120,20 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 
 ---
 
-### v3.0.0 - Enterprise Features (6 issues)
+### v3.0.0 - Infrastructure Suite & Enterprise Features (7 issues)
 
 **Iteration**: May 1 - Jun 30, 2026
 
-1. **Multi-Tenancy Support** - Organizations, tenant isolation, quotas
-2. **Delegated Administration** - Tenant admins, department admins, self-service
-3. **High Availability** - Active-active, PostgreSQL, Redis sessions
-4. **Advanced RBAC** - Custom roles, ABAC, time-based access
-5. **Single Sign-On** - SAML 2.0, OAuth/OIDC, MFA, AD federation
-6. **Enterprise Security** - API keys, IP whitelisting, mTLS, vulnerability scanning
+#### Infrastructure Suite (1 issue) ⭐ **FLAGSHIP FEATURE**
+1. **LDAP Infrastructure Suite** (#46) - Unified container deployment of all components (389 DS, Kea DHCP, BIND 9, PostgreSQL, Redis, Web Manager) as a single application with docker-compose and Helm chart
+
+#### Enterprise Features (6 issues)
+2. **Multi-Tenancy Support** - Organizations, tenant isolation, quotas
+3. **Delegated Administration** - Tenant admins, department admins, self-service
+4. **High Availability** - Active-active, PostgreSQL, Redis sessions
+5. **Advanced RBAC** - Custom roles, ABAC, time-based access
+6. **Single Sign-On** - SAML 2.0, OAuth/OIDC, MFA, AD federation
+7. **Enterprise Security** - API keys, IP whitelisting, mTLS, vulnerability scanning
 
 ---
 
@@ -157,17 +162,17 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 - **Backend + Frontend**: 10 issues
 - **Database**: 1 issue (#44 PostgreSQL & Redis)
 - **DevOps**: 2 issues (#45 Container Deployment)
+- **Integration**: 5 issues (#46 Infrastructure Suite + 4 others)
 - **Documentation**: 1 issue
-- **Integration**: 4 issues
 - **Security**: 3 issues
 
 ### By Priority
 - **Critical Priority**: 1 issue (#44 PostgreSQL Backend - blocking IPAM features)
-- **High Priority**: 5 issues (IPAM Visual Interface + #45 Container Deployment)
+- **High Priority**: 6 issues (IPAM Visual Interface + #45 Container Deployment + #46 Infrastructure Suite)
 - **Normal Priority**: 40 issues
 
 ### Total
-- **46 issues created**
+- **47 issues created**
 - **All added to project**
 - **All properly labeled**
 
@@ -180,7 +185,7 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 | v2.1.0 | Nov 15 - Dec 15, 2025 | 30 days | 17 |
 | v2.2.0 | Jan 1 - Feb 15, 2026 | 45 days | 11 |
 | v2.3.0 | Mar 1 - Apr 15, 2026 | 45 days | 4 |
-| v3.0.0 | May 1 - Jun 30, 2026 | 60 days | 6 |
+| v3.0.0 | May 1 - Jun 30, 2026 | 60 days | 7 |
 | v3.1.0 | Jul 15 - Aug 30, 2026 | 45 days | 7 |
 
 **Total Planning Horizon**: 9 months (Nov 2025 - Aug 2026)

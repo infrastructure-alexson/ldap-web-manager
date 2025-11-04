@@ -385,10 +385,61 @@ gantt
 
 ---
 
-## v3.0.0 - Enterprise Features 🏢
+## v3.0.0 - Infrastructure Suite & Enterprise Features 🏢
 
 **Target Release**: Mid 2026  
-**Focus**: Multi-tenancy, HA, and enterprise scale
+**Focus**: Unified infrastructure deployment, multi-tenancy, HA, and enterprise scale
+
+### LDAP Infrastructure Suite ⭐ **FLAGSHIP FEATURE**
+
+**Status**: Unified deployment of all infrastructure components as a single application
+
+#### Overview
+
+Deploy the **complete infrastructure stack** as a turnkey solution:
+- **LDAP Web Manager**: Management interface
+- **389 Directory Service**: LDAP backend (multi-master replication)
+- **Kea DHCP**: DHCP server with LDAP backend (hot-standby HA)
+- **BIND 9 DNS**: DNS server with LDAP DLZ (primary/secondary)
+- **PostgreSQL**: IPAM and audit logging
+- **Redis**: Sessions and caching
+
+#### Deployment Options
+
+**Docker Compose Suite**:
+- Single `docker-compose-suite.yml` file
+- All 6+ containers orchestrated
+- Pre-configured service discovery
+- Built-in high availability
+- One-command deployment: `docker-compose up -d`
+
+**Kubernetes/OpenShift Suite**:
+- Complete Helm chart: `ldap-infrastructure-suite`
+- StatefulSets for stateful services (LDAP, DNS, DHCP)
+- ConfigMaps for unified configuration
+- Secrets management
+- Ingress/Routes for web access
+- HorizontalPodAutoscaler for web components
+- Service mesh integration (optional)
+
+#### Benefits
+
+✅ **Turnkey Solution**: Deploy entire infrastructure with one command  
+✅ **Unified Management**: Single web interface for all services  
+✅ **Service Discovery**: Automatic configuration between components  
+✅ **High Availability**: Built-in HA for all critical services  
+✅ **Cloud Native**: Container orchestration best practices  
+✅ **Version Control**: GitOps-ready infrastructure as code  
+✅ **Simplified Operations**: Unified monitoring, logging, updates  
+✅ **Cost Effective**: Reduced infrastructure footprint  
+
+#### Use Cases
+
+- **Greenfield Deployments**: New infrastructure from scratch
+- **Lab Environments**: Quick setup for testing/development
+- **Kubernetes-Native Infra**: Container-first organizations
+- **Proof of Concept**: Rapid evaluation and demos
+- **CI/CD Pipelines**: Ephemeral infrastructure for testing
 
 ### Multi-Tenancy
 
