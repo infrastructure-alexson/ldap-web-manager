@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FiUsers, FiGrid, FiGlobe, FiServer, FiActivity, FiAlertCircle } from 'react-icons/fi';
 import { usersApi } from '../api/users';
 import { groupsApi } from '../api/groups';
+import { dnsApi } from '../api/dns';
 
 const Dashboard = () => {
   // Fetch statistics
@@ -18,6 +19,11 @@ const Dashboard = () => {
   const { data: groupsData, isLoading: groupsLoading } = useQuery({
     queryKey: ['groups', 'stats'],
     queryFn: () => groupsApi.list({ page: 1, page_size: 1 }),
+  });
+
+  const { data: dnsData, isLoading: dnsLoading } = useQuery({
+    queryKey: ['dns', 'stats'],
+    queryFn: () => dnsApi.listZones({ page: 1, page_size: 1 }),
   });
 
   const stats = [
@@ -37,7 +43,7 @@ const Dashboard = () => {
     },
     { 
       name: 'DNS Zones', 
-      value: '—', 
+      value: dnsLoading ? '—' : dnsData?.total || 0, 
       icon: FiGlobe, 
       color: 'bg-purple-500',
       href: '/dns'
