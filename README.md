@@ -303,6 +303,7 @@ The main dashboard provides:
 - [v2.0.0 Release Summary](doc/V2-COMPLETION-SUMMARY.md) - Major release details
 - [Product Roadmap](doc/ROADMAP.md) - Future enhancements and planned features
 - [Issue Creation Summary](doc/ISSUE-CREATION-SUMMARY.md) - GitHub issues and project setup
+- [Project Organization Guide](doc/PROJECT-ORGANIZATION-GUIDE.md) - How to organize the project board
 - [API Documentation](https://your-server/api/docs) - Interactive Swagger docs (when deployed)
 
 ---
