@@ -298,6 +298,7 @@ The main dashboard provides:
 
 - [Installation Guide](doc/INSTALLATION.md) - Complete installation instructions
 - [NGINX Setup](doc/NGINX-SETUP.md) - Web server configuration
+- [External Reverse Proxy Setup](doc/EXTERNAL-REVERSE-PROXY.md) - SSL/TLS termination configuration
 - [Development Guide](doc/DEVELOPMENT.md) - For contributors
 - [Project Summary](doc/PROJECT-SUMMARY.md) - Complete feature overview
 - [v2.0.0 Release Summary](doc/V2-COMPLETION-SUMMARY.md) - Major release details
