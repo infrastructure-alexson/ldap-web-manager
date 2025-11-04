@@ -55,36 +55,39 @@ graph TB
 
 ## ✨ Features
 
-### 📋 User & Group Management
+### 📋 User & Group Management ✅ **COMPLETE**
 - ✅ **User Management**: Create, edit, delete, and search users
 - ✅ **Group Management**: Manage POSIX groups and memberships
-- ✅ **Password Management**: Reset passwords, enforce policies
-- ✅ **Service Accounts**: Manage dedicated service accounts
-- ✅ **Bulk Operations**: Import/export users via CSV
-- ✅ **Audit Logging**: Track all changes with timestamps
+- ✅ **Password Management**: Reset passwords, enforce complexity policies
+- ✅ **Service Accounts**: View and manage dedicated service accounts
+- ✅ **Automatic UID/GID**: Auto-generation of unique identifiers
+- ✅ **Full POSIX Support**: Home directories, shells, gecos fields
+- ✅ **Search & Pagination**: Fast access to users and groups
+- ✅ **Permission-Based UI**: Role-based action visibility
 
-### 🌐 IPAM (IP Address Management)
-- ✅ **IP Pool Management**: Visualize and allocate IP address ranges
-- ✅ **Subnet Calculator**: Plan and document network segments
-- ✅ **IP Tracking**: Monitor used vs. available addresses
-- ✅ **Conflict Detection**: Prevent duplicate IP assignments
-- ✅ **Integration**: Auto-sync with DHCP and DNS
-
-### 🌍 DNS Management (BIND 9)
+### 🌍 DNS Management (BIND 9) ✅ **COMPLETE**
 - ✅ **Zone Management**: Create, edit, delete forward and reverse zones
-- ✅ **Record Management**: Full support for A, AAAA, CNAME, MX, TXT, PTR, SRV, NS records
-- ✅ **DNSSEC**: Enable and manage DNSSEC for zones
-- ✅ **Dynamic DNS**: View and manage DDNS updates from DHCP
-- ✅ **Zone Import/Export**: Bulk operations for zone files
+- ✅ **SOA Records**: Full SOA parameter control with auto-increment serial
+- ✅ **Record Management**: Support for A, AAAA, CNAME, MX, TXT, PTR, SRV, NS records
+- ✅ **DLZ Integration**: Native 389 DS LDAP backend for BIND 9
+- ✅ **Zone Statistics**: View zone counts and details
 - ✅ **Validation**: Real-time syntax checking for DNS records
+- ✅ **Search & Pagination**: Fast zone lookup
 
-### 🔌 DHCP Management (Kea)
-- ✅ **Subnet Management**: Configure IPv4/IPv6 subnets
-- ✅ **Address Pools**: Define dynamic IP address ranges
-- ✅ **Static Reservations**: MAC-to-IP mappings for hosts
-- ✅ **DHCP Options**: Configure DNS servers, gateways, domain names
-- ✅ **Lease Monitoring**: View active leases and statistics
-- ✅ **Failover Status**: Monitor DHCP high availability
+### 🌐 IPAM (IP Address Management) 📋 **PLANNED**
+- 📋 **IP Pool Management**: Visualize and allocate IP address ranges
+- 📋 **Subnet Calculator**: Plan and document network segments
+- 📋 **IP Tracking**: Monitor used vs. available addresses
+- 📋 **Conflict Detection**: Prevent duplicate IP assignments
+- 📋 **Integration**: Auto-sync with DHCP and DNS
+
+### 🔌 DHCP Management (Kea) 📋 **PLANNED**
+- 📋 **Subnet Management**: Configure IPv4/IPv6 subnets
+- 📋 **Address Pools**: Define dynamic IP address ranges
+- 📋 **Static Reservations**: MAC-to-IP mappings for hosts
+- 📋 **DHCP Options**: Configure DNS servers, gateways, domain names
+- 📋 **Lease Monitoring**: View active leases and statistics
+- 📋 **Failover Status**: Monitor DHCP high availability
 
 ### 🔐 Security & Authentication
 - ✅ **LDAPS**: Encrypted connections to 389 DS
