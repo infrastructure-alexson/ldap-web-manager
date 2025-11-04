@@ -221,9 +221,13 @@ gantt
 - **Official Container Images**:
   - Multi-stage Dockerfiles for optimized image size
   - Separate images for backend (FastAPI) and frontend (NGINX)
-  - Published to Docker Hub and GitHub Container Registry
+  - Published to multiple registries:
+    - **Docker Hub**: `infrastructure-alexson/ldap-web-manager-*`
+    - **GitHub Container Registry**: `ghcr.io/infrastructure-alexson/ldap-web-manager-*`
+    - **Quay.io**: `quay.io/infrastructure-alexson/ldap-web-manager-*`
   - Multi-architecture builds (amd64, arm64)
   - Automated builds on release tags
+  - Quay security scanning and vulnerability detection
   
 - **Docker Compose**:
   - Full-stack deployment with single command
@@ -428,11 +432,13 @@ gantt
 
 - **Template**: One-click deployment from catalog
 - **Route**: Native OpenShift ingress with TLS
-- **ImageStreams**: Automatic rebuild triggers
+- **ImageStreams**: Automatic rebuild triggers from Quay.io
 - **DeploymentConfig**: OpenShift-native deployments
 - **SecurityContextConstraints**: Proper permissions
 - **S2I (Source-to-Image)**: Build from source
 - **Project isolation**: Multi-tenancy support
+- **Quay integration**: Native Red Hat Quay registry support
+- **Robot accounts**: Automated pull credentials for private images
 
 ### High Availability
 
@@ -627,12 +633,13 @@ gantt
 
 - **CI/CD Pipelines**: GitHub Actions for automated testing/deployment
 - **Container Deployment** (v2.2.0):
-  - Official Docker/Podman images on Docker Hub and GitHub Container Registry
+  - Official Docker/Podman images on Docker Hub, GitHub Container Registry, and Quay.io
   - Multi-architecture support (amd64, arm64)
   - docker-compose.yml for full stack deployment
   - Podman compatibility with rootless containers
   - Kubernetes manifests and Helm charts (v3.0.0)
   - OpenShift template and Route configuration (v3.0.0)
+  - Quay security scanning and vulnerability detection
 - **Deployment Automation**: One-command production deployment
 - **Backup/Restore**: Automated backup verification
 - **Documentation**: Auto-generated API docs from code
