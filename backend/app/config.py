@@ -74,7 +74,7 @@ class Config(BaseSettings):
     
     # CORS
     cors_origins: List[str] = [
-        "https://ldap-manager.eh168.alexson.org",
+        "https://ldap-manager.svc.eh168.alexson.org",
         "http://localhost:5173"
     ]
     

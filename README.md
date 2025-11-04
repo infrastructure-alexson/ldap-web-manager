@@ -142,7 +142,7 @@ nano config/app-config.yaml  # Edit LDAP connection details
 sudo ./scripts/deploy-full.sh
 
 # Access the web interface
-firefox https://ldap-manager.eh168.alexson.org
+firefox https://ldap-manager.svc.eh168.alexson.org
 ```
 
 #### Option 2: Manual Deployment

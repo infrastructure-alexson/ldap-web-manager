@@ -56,7 +56,7 @@ sudo systemctl restart nginx
 sudo dnf install -y certbot python3-certbot-nginx
 
 # Obtain certificate
-sudo certbot --nginx -d ldap-manager.eh168.alexson.org
+sudo certbot --nginx -d ldap-manager.svc.eh168.alexson.org
 
 # Verify auto-renewal
 sudo certbot renew --dry-run
@@ -101,7 +101,7 @@ sudo mkdir -p /etc/nginx/ssl
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 \
   -keyout /etc/nginx/ssl/ldap-manager.key \
   -out /etc/nginx/ssl/ldap-manager.crt \
-  -subj "/C=US/ST=State/L=City/O=Organization/CN=ldap-manager.eh168.alexson.org"
+  -subj "/C=US/ST=State/L=City/O=Organization/CN=ldap-manager.svc.eh168.alexson.org"
 
 # Set permissions
 sudo chmod 600 /etc/nginx/ssl/ldap-manager.key
@@ -363,11 +363,11 @@ sudo restorecon -Rv /var/www/ldap-manager
 
 ```bash
 # Test SSL configuration
-openssl s_client -connect ldap-manager.eh168.alexson.org:443 -servername ldap-manager.eh168.alexson.org
+openssl s_client -connect ldap-manager.svc.eh168.alexson.org:443 -servername ldap-manager.svc.eh168.alexson.org
 
 # Check certificate expiration
-echo | openssl s_client -servername ldap-manager.eh168.alexson.org \
-  -connect ldap-manager.eh168.alexson.org:443 2>/dev/null | \
+echo | openssl s_client -servername ldap-manager.svc.eh168.alexson.org \
+  -connect ldap-manager.svc.eh168.alexson.org:443 2>/dev/null | \
   openssl x509 -noout -dates
 ```
 

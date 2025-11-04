@@ -41,7 +41,7 @@ Comprehensive REST API for managing:
 All API endpoints require authentication via JWT token:
 
 ```bash
-curl -X POST https://ldap-manager.eh168.alexson.org/api/auth/login \\
+curl -X POST https://ldap-manager.svc.eh168.alexson.org/api/auth/login \\
   -H "Content-Type: application/json" \\
   -d '{"username": "admin", "password": "your_password"}'
 ```
@@ -49,7 +49,7 @@ curl -X POST https://ldap-manager.eh168.alexson.org/api/auth/login \\
 Use the returned token in subsequent requests:
 
 ```bash
-curl https://ldap-manager.eh168.alexson.org/api/users \\
+curl https://ldap-manager.svc.eh168.alexson.org/api/users \\
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -98,7 +98,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://ldap-manager.eh168.alexson.org",
+        "https://ldap-manager.svc.eh168.alexson.org",
         "http://localhost:5173",  # Vite dev server
     ],
     allow_credentials=True,

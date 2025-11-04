@@ -52,7 +52,7 @@ upstream ldap_manager_backend {
 server {
     listen 8080;
     listen [::]:8080;
-    server_name ldap-manager.eh168.alexson.org;
+    server_name ldap-manager.svc.eh168.alexson.org;
     
     # Trust proxy headers from NGINX Proxy Manager
     # Replace with your NPM server IP
@@ -139,7 +139,7 @@ sudo systemctl restart nginx
 1. Click **"Hosts"** → **"Proxy Hosts"** → **"Add Proxy Host"**
 
 2. **Details Tab**:
-   - **Domain Names**: `ldap-manager.eh168.alexson.org`
+   - **Domain Names**: `ldap-manager.svc.eh168.alexson.org`
    - **Scheme**: `http` (internal connection is not encrypted)
    - **Forward Hostname / IP**: `192.168.1.10` (your LDAP Manager server IP)
    - **Forward Port**: `8080`
@@ -205,18 +205,18 @@ If you want to restrict access:
 
 #### A. Test Health Check
 ```bash
-curl https://ldap-manager.eh168.alexson.org/health
+curl https://ldap-manager.svc.eh168.alexson.org/health
 # Expected: "healthy"
 ```
 
 #### B. Test API
 ```bash
-curl https://ldap-manager.eh168.alexson.org/api/version
+curl https://ldap-manager.svc.eh168.alexson.org/api/version
 # Expected: JSON response with version info
 ```
 
 #### C. Test Frontend
-Open browser to: `https://ldap-manager.eh168.alexson.org`
+Open browser to: `https://ldap-manager.svc.eh168.alexson.org`
 
 **Verify**:
 - ✅ Page loads with HTTPS
@@ -227,7 +227,7 @@ Open browser to: `https://ldap-manager.eh168.alexson.org`
 
 #### D. Check Headers
 ```bash
-curl -I https://ldap-manager.eh168.alexson.org
+curl -I https://ldap-manager.svc.eh168.alexson.org
 # Should see:
 # - Strict-Transport-Security
 # - X-Frame-Options
@@ -390,7 +390,7 @@ upstream ldap_manager_backend {
 server {
     listen 8080;  # Internal port, not exposed externally
     listen [::]:8080;
-    server_name ldap-manager.eh168.alexson.org;
+    server_name ldap-manager.svc.eh168.alexson.org;
     
     # Trust X-Forwarded headers from reverse proxy
     set_real_ip_from 192.168.1.0/24;  # Adjust to your reverse proxy IP range
@@ -537,7 +537,7 @@ upstream ldap_manager_internal {
 server {
     listen 80;
     listen [::]:80;
-    server_name ldap-manager.eh168.alexson.org;
+    server_name ldap-manager.svc.eh168.alexson.org;
     
     # Let's Encrypt challenge
     location /.well-known/acme-challenge/ {
@@ -554,7 +554,7 @@ server {
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name ldap-manager.eh168.alexson.org;
+    server_name ldap-manager.svc.eh168.alexson.org;
     
     # SSL Configuration
     ssl_certificate /etc/nginx/ssl/ldap-manager.crt;
@@ -748,7 +748,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ldap-manager.eh168.alexson.org"],
+    allow_origins=["https://ldap-manager.svc.eh168.alexson.org"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -777,7 +777,7 @@ location /api/ {
 ### 1. Test Health Check
 
 ```bash
-curl https://ldap-manager.eh168.alexson.org/health
+curl https://ldap-manager.svc.eh168.alexson.org/health
 # Expected: "healthy"
 ```
 
@@ -795,13 +795,13 @@ Should show actual client IPs, not proxy IP.
 
 ```bash
 curl -H "Content-Type: application/json" \
-     https://ldap-manager.eh168.alexson.org/api/auth/login \
+     https://ldap-manager.svc.eh168.alexson.org/api/auth/login \
      -d '{"username":"admin","password":"password"}'
 ```
 
 ### 4. Test Frontend
 
-Open browser to `https://ldap-manager.eh168.alexson.org` and verify:
+Open browser to `https://ldap-manager.svc.eh168.alexson.org` and verify:
 - [ ] Page loads correctly
 - [ ] API calls work
 - [ ] Login functions

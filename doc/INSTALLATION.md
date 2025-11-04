@@ -293,7 +293,7 @@ sudo systemctl status ldap-web-manager.service
 sudo dnf install -y certbot python3-certbot-nginx
 
 # Obtain certificate
-sudo certbot --nginx -d ldap-manager.eh168.alexson.org
+sudo certbot --nginx -d ldap-manager.svc.eh168.alexson.org
 
 # Auto-renewal is configured automatically
 ```
@@ -314,7 +314,7 @@ Update certificate paths in `/etc/nginx/sites-available/ldap-manager.conf`.
 Add DNS A record for your hostname:
 
 ```
-ldap-manager.eh168.alexson.org  A  <YOUR_SERVER_IP>
+ldap-manager.svc.eh168.alexson.org  A  <YOUR_SERVER_IP>
 ```
 
 ### 3. Create Admin User
@@ -334,12 +334,12 @@ curl http://localhost:8000/api/health
 curl -I http://localhost/
 
 # Check full stack
-curl -k https://ldap-manager.eh168.alexson.org/api/version
+curl -k https://ldap-manager.svc.eh168.alexson.org/api/version
 ```
 
 ### 5. Access Web Interface
 
-Navigate to: `https://ldap-manager.eh168.alexson.org`
+Navigate to: `https://ldap-manager.svc.eh168.alexson.org`
 
 Default login: Use your LDAP admin credentials
 

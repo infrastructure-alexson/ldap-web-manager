@@ -208,7 +208,7 @@ rate_limiting:
 cors:
   enabled: true
   origins:
-    - "https://ldap-manager.eh168.alexson.org"
+    - "https://ldap-manager.svc.eh168.alexson.org"
     - "http://localhost:5173"  # Vite dev server
   allow_credentials: true
 
