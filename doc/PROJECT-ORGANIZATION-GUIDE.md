@@ -1,6 +1,7 @@
 # Project Board Organization Guide
 
-**Project**: https://github.com/orgs/infrastructure-alexson/projects/1  
+**Feature Tracking Project**: https://github.com/orgs/infrastructure-alexson/projects/1  
+**Bug Tracking Project**: https://github.com/orgs/infrastructure-alexson/projects/2  
 **Repository**: infrastructure-alexson/ldap-web-manager  
 **Last Updated**: 2025-11-03
 
@@ -8,7 +9,14 @@
 
 ## Overview
 
-This guide provides instructions for organizing the LDAP Web Manager project board with 43 issues spanning 5 major versions (v2.1.0 through v3.1.0).
+This guide provides instructions for organizing the LDAP Web Manager project boards.
+
+### Project Separation
+
+- **Project #1** - Feature enhancements, roadmap items, new functionality (43 issues spanning v2.1.0 - v3.1.0)
+- **Project #2** - Bug fixes, defects, issues with existing functionality
+
+**Important**: All new bugs should be tracked on Project #2, not Project #1.
 
 ---
 
@@ -348,6 +356,63 @@ Consider setting up GitHub Actions workflows for:
 
 ---
 
+## Bug Tracking (Project #2)
+
+### Creating Bug Reports
+
+All bugs should be created with the `bug` label and added to **Project #2** instead of Project #1.
+
+**Command to create a bug**:
+```bash
+gh issue create --repo infrastructure-alexson/ldap-web-manager \
+  --title "[BUG] Brief description" \
+  --label bug \
+  --body "Description of the bug..."
+```
+
+**Add to Bug Tracking Project**:
+```bash
+gh project item-add 2 --owner infrastructure-alexson \
+  --url https://github.com/infrastructure-alexson/ldap-web-manager/issues/<number>
+```
+
+### Bug Severity Levels
+
+Use additional labels to indicate severity:
+- `severity:critical` - System down, data loss, security vulnerability
+- `severity:high` - Major functionality broken, blocking users
+- `severity:medium` - Feature partially working, workaround available
+- `severity:low` - Minor issue, cosmetic, edge case
+
+### Bug Workflow
+
+1. **Report**: Create issue with `bug` label
+2. **Triage**: Assign severity and priority
+3. **Add to Project #2**: Ensure it's on the bug tracking board
+4. **Assign**: Assign to developer
+5. **Fix**: Create branch, fix, test, PR
+6. **Verify**: QA verification
+7. **Close**: Close issue when fix is deployed
+
+### Bug vs Feature
+
+**It's a bug if**:
+- Existing functionality doesn't work as documented
+- Error messages or crashes occur
+- Data corruption or loss
+- Security vulnerability
+- Performance regression
+
+**It's a feature if**:
+- Requesting new functionality
+- Enhancement to existing feature
+- Change in behavior (not broken)
+- Documentation improvement
+
+When in doubt, start with `bug` label and let triage reassign if needed.
+
+---
+
 ## Troubleshooting
 
 ### Issue not showing in project
@@ -370,9 +435,17 @@ Consider setting up GitHub Actions workflows for:
 
 ## Resources
 
-- **Project Board**: https://github.com/orgs/infrastructure-alexson/projects/1
+### Project Boards
+- **Feature Tracking (Project #1)**: https://github.com/orgs/infrastructure-alexson/projects/1
+- **Bug Tracking (Project #2)**: https://github.com/orgs/infrastructure-alexson/projects/2
+
+### Repository & Issues
 - **Repository**: https://github.com/infrastructure-alexson/ldap-web-manager
-- **Issues**: https://github.com/infrastructure-alexson/ldap-web-manager/issues
+- **All Issues**: https://github.com/infrastructure-alexson/ldap-web-manager/issues
+- **Features Only**: https://github.com/infrastructure-alexson/ldap-web-manager/issues?q=is%3Aissue+is%3Aopen+-label%3Abug
+- **Bugs Only**: https://github.com/infrastructure-alexson/ldap-web-manager/issues?q=is%3Aissue+is%3Aopen+label%3Abug
+
+### Documentation
 - **Roadmap**: [doc/ROADMAP.md](ROADMAP.md)
 - **Issue Summary**: [doc/ISSUE-CREATION-SUMMARY.md](ISSUE-CREATION-SUMMARY.md)
 

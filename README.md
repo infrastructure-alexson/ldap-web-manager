@@ -326,7 +326,9 @@ MIT License - See [LICENSE](LICENSE) file for details
 
 ## 🛠️ Support
 
-- **Issues**: https://github.com/infrastructure-alexson/ldap-web-manager/issues
+- **Bug Reports**: https://github.com/orgs/infrastructure-alexson/projects/2 (Project #2)
+- **Feature Requests**: https://github.com/orgs/infrastructure-alexson/projects/1 (Project #1)
+- **All Issues**: https://github.com/infrastructure-alexson/ldap-web-manager/issues
 - **Discussions**: https://github.com/infrastructure-alexson/ldap-web-manager/discussions
 
 ---
