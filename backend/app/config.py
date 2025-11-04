@@ -60,8 +60,12 @@ class Config(BaseSettings):
     password_require_numbers: bool = True
     password_require_special: bool = True
     
-    # Database (for audit logs)
-    database_url: str = "sqlite:///var/lib/ldap-web-manager/audit.db"
+    # Database (PostgreSQL for IPAM, sessions, and audit logs)
+    database_url: str = Field(..., env="DATABASE_URL")
+    database_pool_size: int = 20
+    database_max_overflow: int = 40
+    database_pool_timeout: int = 30
+    database_pool_recycle: int = 3600
     
     # Audit logging
     audit_enabled: bool = True

@@ -238,31 +238,34 @@ Set Priority to "High" for issues:
 
 **Within Each Iteration Column**:
 
-1. High-priority issues first (#1-4 in v2.1.0)
-2. Then by logical grouping:
+1. Critical issues first (#44 in v2.1.0)
+2. High-priority issues next (#1-4, #43 in v2.1.0)
+3. Then by logical grouping:
+   - Database/Infrastructure features
    - IPAM features together
    - Audit/Operations features together
    - UI enhancements together
    - Documentation last
-3. Finally by issue number (ascending)
+4. Finally by issue number (ascending)
 
 **Recommended Order for v2.1.0**:
-1. #43 (IPAM IP Allocation Map - High)
-2. #1 (IPAM Subnet Calculator)
-3. #2 (IPAM IP Search)
-4. #3 (IPAM Pool Management)
-5. #5 (Audit Log)
-6. #6 (Bulk Users)
-7. #7 (Bulk DNS)
-8. #8 (Bulk IP)
-9. #42 (Service Accounts)
-10. #9 (User Profile)
-11. #10 (Group Details)
-12. #11 (DNS Editor)
-13. #12 (DHCP Wizard)
-14. #13 (Dashboard Widgets)
-15. #14 (Dark Mode)
-16. #15 (Documentation)
+1. #44 (PostgreSQL Backend - CRITICAL - must complete first, blocks IPAM UI)
+2. #43 (IPAM IP Allocation Map - High)
+3. #1 (IPAM Subnet Calculator)
+4. #2 (IPAM IP Search)
+5. #3 (IPAM Pool Management)
+6. #4 (Audit Log Viewer)
+7. #5 (Bulk Users)
+8. #6 (Bulk DNS)
+9. #7 (Bulk IP)
+10. #42 (Service Accounts)
+11. #8 (User Profile)
+12. #9 (Group Details)
+13. #10 (DNS Zone Editor)
+14. #11 (DHCP Subnet Wizard)
+15. #12 (Dashboard Widgets)
+16. #13 (Dark Mode)
+17. #14 (Documentation Updates)
 
 ---
 
@@ -270,10 +273,11 @@ Set Priority to "High" for issues:
 
 After setup, verify:
 
-- [ ] All 43 issues are in the project
+- [ ] All 45 issues are in the project
 - [ ] Each issue has the correct "Iteration" assigned
 - [ ] Each issue has the correct "Version" field
-- [ ] Issues #1-4 have "High" priority
+- [ ] Issue #44 has "Critical" priority (or highest priority available)
+- [ ] Issues #1, #2, #3, #43 have "High" priority
 - [ ] All other issues have appropriate priority
 - [ ] Iterations have correct start/end dates
 - [ ] Board views are configured (By Iteration, By Priority, Current Sprint, Roadmap)

@@ -16,8 +16,12 @@ passlib[bcrypt]==1.7.4
 python-multipart==0.0.6
 cryptography==42.0.0
 
-# Database (for audit logs and caching)
+# Database (PostgreSQL for IPAM, sessions, and audit logs)
 sqlalchemy==2.0.25
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+alembic==1.13.1
+# SQLite for development fallback
 aiosqlite==0.19.0
 
 # Configuration

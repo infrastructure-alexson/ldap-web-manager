@@ -11,9 +11,11 @@
 Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 through v3.1.0. All issues have been:
 - ✅ Created with detailed descriptions
 - ✅ Tagged with version labels
-- ✅ Tagged with category labels (backend, frontend, security, etc.)
+- ✅ Tagged with category labels (backend, frontend, security, database, etc.)
 - ✅ Added to organization project
 - ⏳ Ready for iteration assignment
+
+**Latest Update**: Added issue #44 for PostgreSQL backend and Redis session management (2025-11-04)
 
 ---
 
@@ -22,7 +24,7 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 ### Version Labels
 | Label | Description | Color | Count |
 |-------|-------------|-------|-------|
-| v2.1.0 | Features planned for v2.1.0 release | #0366d6 | 16 issues |
+| v2.1.0 | Features planned for v2.1.0 release | #0366d6 | 17 issues |
 | v2.2.0 | Features planned for v2.2.0 release | #1d76db | 10 issues |
 | v2.3.0 | Features planned for v2.3.0 release | #2ea44f | 4 issues |
 | v3.0.0 | Features planned for v3.0.0 release | #fbca04 | 6 issues |
@@ -35,6 +37,7 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 | high-priority | High priority feature | #d93f0b |
 | backend | Backend work required | #5319e7 |
 | frontend | Frontend work required | #1d76db |
+| database | Database related | #5319e7 |
 | security | Security related | #d73a4a |
 | performance | Performance improvement | #0e8a16 |
 | integration | Third-party integration | #fbca04 |
@@ -45,33 +48,36 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 
 ## Issues Created by Version
 
-### v2.1.0 - UI Completion & User Experience (16 issues)
+### v2.1.0 - UI Completion & User Experience (17 issues)
 
 **Iteration**: Nov 15 - Dec 15, 2025
 
+#### Database Backend (1 issue) ⭐ **CRITICAL**
+1. **PostgreSQL Backend for IPAM & Audit Logging** (#44) - Replace SQLite with PostgreSQL for production scalability, concurrent access, and HA support. Includes Redis session management.
+
 #### IPAM Visual Interface (4 issues)
-1. **Subnet Calculator** (#1) - CIDR planning tool with split/merge capability
-2. **IP Search & Discovery** (#2) - Advanced search by IP/hostname/MAC with export
-3. **Pool Management UI** (#3) - Complete CRUD interface for IP pools
-4. **IP Allocation Map** (#43) - Visual grid with color-coded status, click to allocate/release ⭐ HIGH PRIORITY
+2. **Subnet Calculator** (#1) - CIDR planning tool with split/merge capability
+3. **IP Search & Discovery** (#2) - Advanced search by IP/hostname/MAC with export
+4. **Pool Management UI** (#3) - Complete CRUD interface for IP pools
+5. **IP Allocation Map** (#43) - Visual grid with color-coded status, click to allocate/release ⭐ HIGH PRIORITY
 
 #### Audit & Operations (5 issues)
-5. **Audit Log Viewer** - Web-based log viewer with filtering and export
-6. **Bulk User Operations** - CSV/LDIF import, bulk password reset, group membership
-7. **Bulk DNS Operations** - Zone file import/export, bulk record creation
-8. **Bulk IP Allocation** - CSV import for IP allocations
-9. **Service Account Management** - Dedicated UI for LDAP service accounts with password rotation
+6. **Audit Log Viewer** - Web-based log viewer with filtering and export
+7. **Bulk User Operations** - CSV/LDIF import, bulk password reset, group membership
+8. **Bulk DNS Operations** - Zone file import/export, bulk record creation
+9. **Bulk IP Allocation** - CSV import for IP allocations
+10. **Service Account Management** (#42) - Dedicated UI for LDAP service accounts with password rotation
 
 #### Enhanced UI Components (6 issues)
-10. **User Profile Page** - Detailed user view with full edit capabilities
-11. **Group Details Page** - Member management with nested group support
-12. **DNS Zone Editor** - Syntax-highlighted zone file editor
-13. **DHCP Subnet Wizard** - Step-by-step subnet configuration wizard
-14. **Dashboard Widgets** - Customizable draggable dashboard layout
-15. **Dark Mode** - Light/dark theme toggle with persistence
+11. **User Profile Page** - Detailed user view with full edit capabilities
+12. **Group Details Page** - Member management with nested group support
+13. **DNS Zone Editor** - Syntax-highlighted zone file editor
+14. **DHCP Subnet Wizard** - Step-by-step subnet configuration wizard
+15. **Dashboard Widgets** - Customizable draggable dashboard layout
+16. **Dark Mode** - Light/dark theme toggle with persistence
 
 #### Documentation (1 issue)
-16. **Documentation Updates** - User guide, screenshots, video tutorials, API examples
+17. **Documentation Updates** - User guide, screenshots, video tutorials, API examples
 
 ---
 
@@ -142,19 +148,21 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 
 ### By Type
 - **Frontend**: 18 issues
-- **Backend**: 15 issues
+- **Backend**: 16 issues (including #44 Database Backend)
 - **Backend + Frontend**: 10 issues
+- **Database**: 1 issue (#44 PostgreSQL & Redis)
 - **Documentation**: 1 issue
 - **Integration**: 4 issues
 - **DevOps**: 1 issue
 - **Security**: 3 issues
 
 ### By Priority
+- **Critical Priority**: 1 issue (#44 PostgreSQL Backend - blocking IPAM features)
 - **High Priority**: 4 issues (IPAM Visual Interface - including #43)
 - **Normal Priority**: 40 issues
 
 ### Total
-- **44 issues created**
+- **45 issues created**
 - **All added to project**
 - **All properly labeled**
 
@@ -164,7 +172,7 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 
 | Version | Iteration Dates | Duration | Issues |
 |---------|----------------|----------|--------|
-| v2.1.0 | Nov 15 - Dec 15, 2025 | 30 days | 16 |
+| v2.1.0 | Nov 15 - Dec 15, 2025 | 30 days | 17 |
 | v2.2.0 | Jan 1 - Feb 15, 2026 | 45 days | 10 |
 | v2.3.0 | Mar 1 - Apr 15, 2026 | 45 days | 4 |
 | v3.0.0 | May 1 - Jun 30, 2026 | 60 days | 6 |
@@ -206,11 +214,12 @@ gh milestone create --repo infrastructure-alexson/ldap-web-manager --title "v3.1
 
 ### 4. Begin Development
 
-Start with v2.1.0 high-priority issues:
-1. IPAM IP Allocation Map
-2. IPAM Subnet Calculator
-3. IPAM IP Search & Discovery
-4. IPAM Pool Management UI
+Start with v2.1.0 critical/high-priority issues:
+1. **PostgreSQL Backend** (#44) - CRITICAL: Must be completed first, blocks IPAM UI features
+2. IPAM IP Allocation Map (#43)
+3. IPAM Subnet Calculator (#1)
+4. IPAM IP Search & Discovery (#2)
+5. IPAM Pool Management UI (#3)
 
 ---
 

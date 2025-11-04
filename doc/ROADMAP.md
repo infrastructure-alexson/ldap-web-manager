@@ -90,6 +90,76 @@ gantt
 - **Bulk DNS Records**: Import zone files, export records
 - **Bulk IP Allocation**: Allocate ranges from CSV
 
+### Database Backend (PostgreSQL & Redis) ⭐ **HIGH PRIORITY**
+
+**Status**: Critical infrastructure improvement needed before IPAM UI completion
+
+#### PostgreSQL for IPAM & Audit Logging
+
+**Current**: SQLite (development-only, limited concurrency)  
+**Target**: PostgreSQL (production-ready, enterprise-grade)
+
+- **Migration from SQLite**:
+  - Replace SQLite with PostgreSQL for IPAM data storage
+  - Move audit logging to PostgreSQL with partitioning
+  - Alembic migrations for schema versioning
+  - Data migration script for existing SQLite databases
+  - Zero-downtime migration strategy
+
+- **IPAM in PostgreSQL**:
+  - Native PostgreSQL network types (INET, CIDR, MACADDR)
+  - JSONB for flexible metadata storage
+  - GiST indexes for fast network range queries
+  - Full-text search for hostname/description
+  - Materialized views for statistics
+
+- **Audit Logging in PostgreSQL**:
+  - Structured audit trail for compliance
+  - Table partitioning by month for performance
+  - JSONB for before/after snapshots
+  - Immutable records with cryptographic signatures
+  - Efficient time-range and user-based queries
+  - Automated retention policy enforcement
+
+- **Connection Management**:
+  - Connection pooling (20-40 connections)
+  - Automatic failover and reconnection
+  - Health checks and monitoring
+  - Transaction support for data integrity
+  - Prepared statements for performance
+
+- **Benefits**:
+  - ✅ Concurrent access from multiple users/instances
+  - ✅ High availability with replication
+  - ✅ Better performance under load
+  - ✅ Enterprise-grade reliability
+  - ✅ Compliance-ready audit trail
+  - ✅ Horizontal scaling capability
+
+#### Redis for Session Management (Optional)
+
+**Status**: Optional enhancement for high-availability deployments
+
+- **Distributed Sessions**:
+  - Redis-backed JWT token storage
+  - Session invalidation on logout
+  - Cross-instance session sharing for load balancing
+  - Session expiration and cleanup
+
+- **Caching Layer**:
+  - Cache LDAP query results (users, groups)
+  - Cache DNS/DHCP statistics
+  - Cache IP pool utilization data
+  - TTL-based automatic expiration
+  - Cache invalidation on updates
+
+- **Benefits**:
+  - Stateless backend instances
+  - Load balancer compatibility
+  - Faster response times
+  - Reduced LDAP server load
+  - Improved user experience
+
 ### Service Account Management
 
 **Status**: New feature, not yet implemented
@@ -190,10 +260,33 @@ gantt
 
 ### Performance Enhancements
 
-- **Caching Layer**: Redis integration for frequently accessed data
-- **Database Optimization**: Connection pooling, query optimization
-- **Frontend Performance**: Code splitting, lazy loading, service workers
-- **API Rate Limiting**: Per-user rate limits with quotas
+- **Redis Caching Enhancements**: 
+  - Expand Redis usage beyond sessions
+  - Cache expensive LDAP queries
+  - Cache aggregated statistics
+  - Intelligent cache warming
+  - Cache hit/miss monitoring
+  - Memcached alternative support
+
+- **Database Optimization**: 
+  - Query performance tuning with EXPLAIN ANALYZE
+  - Database query result caching
+  - Asynchronous database operations
+  - Bulk operations optimization
+  - Index maintenance automation
+
+- **Frontend Performance**: 
+  - Code splitting by route
+  - Lazy loading for heavy components
+  - Service workers for offline capability
+  - Progressive Web App (PWA) features
+  - Image optimization and lazy loading
+
+- **API Rate Limiting**: 
+  - Per-user rate limits with Redis
+  - API quotas by user role
+  - Graceful degradation under load
+  - Rate limit headers (X-RateLimit-*)
 
 ---
 
@@ -265,10 +358,31 @@ gantt
 
 ### High Availability
 
-- **Active-Active Frontend**: Multiple backend instances with load balancing
-- **Database HA**: PostgreSQL support with replication (replacing SQLite for IPAM)
-- **Session Management**: Redis-backed sessions for stateless scaling
-- **Health Checks**: Kubernetes readiness/liveness probes
+**Prerequisites**: PostgreSQL and Redis (implemented in v2.1.0)
+
+- **Active-Active Backend**: 
+  - Multiple FastAPI instances with load balancing
+  - Shared PostgreSQL database for state
+  - Redis for distributed sessions
+  - Horizontal pod autoscaling in Kubernetes
+
+- **Database HA**: 
+  - PostgreSQL replication (primary-standby)
+  - Automatic failover with Patroni
+  - Connection pooling with PgBouncer
+  - Backup and point-in-time recovery
+
+- **Session Management**: 
+  - Redis Sentinel for HA sessions
+  - Redis Cluster for horizontal scaling
+  - Session replication across instances
+  - Graceful session failover
+
+- **Health Checks**: 
+  - Kubernetes readiness probes (API, database, LDAP)
+  - Liveness probes for auto-restart
+  - Startup probes for slow initialization
+  - Custom health check endpoints
 
 ### Advanced RBAC
 
