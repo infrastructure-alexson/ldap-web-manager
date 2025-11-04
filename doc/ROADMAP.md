@@ -329,6 +329,7 @@ gantt
   - AWS Route53 DNS sync
   - Azure DNS integration
   - Google Cloud DNS sync
+  - Cloudflare DNS integration
   - Cloud IPAM integration
 
 ### Plugin System

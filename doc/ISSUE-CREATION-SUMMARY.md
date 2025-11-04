@@ -134,7 +134,7 @@ Created comprehensive GitHub issues for all roadmap features spanning v2.1.0 thr
 4. **Ansible Module** - Ansible collection for all resource types
 5. **Terraform Provider** - Infrastructure as code with Terraform
 6. **Prometheus Metrics** - Metrics endpoint with Grafana dashboards
-7. **Cloud DNS Integration** - AWS Route53, Azure DNS, Google Cloud DNS sync
+7. **Cloud DNS Integration** - AWS Route53, Azure DNS, Google Cloud DNS, Cloudflare DNS sync
 
 ---
 
