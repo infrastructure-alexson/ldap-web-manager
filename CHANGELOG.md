@@ -84,10 +84,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2025-11-04
+
+### Added
+
+**Groups Management**
+- Full CRUD API for LDAP groups
+- Group member management (add/remove members)
+- Automatic GID number generation
+- Groups listing page with search and pagination
+- Group member count display
+
+**Dashboard Enhancements**
+- Real-time statistics (users, groups)
+- Clickable stat cards linking to management pages
+- Live data fetching with React Query
+- Loading states for statistics
+
+**Development Tools**
+- Comprehensive development guide
+- API integration examples
+- Code style guidelines
+- Debugging instructions
+
+### Improved
+
+- Frontend API client with groups support
+- Error handling in API responses
+- Table layouts with better responsiveness
+- Search functionality across pages
+
+---
+
 ## [Unreleased]
 
 ### Planned Features
 
+- DNS Zone and Record Management
+- DHCP Subnet and Host Management
+- IP Address Management (IPAM)
+- User management UI with create/edit modals
+- Advanced search and filtering
+- Audit log viewer
 - Two-Factor Authentication (2FA)
 - API Keys for programmatic access
 - Advanced reporting and analytics
@@ -96,7 +134,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-language support
 - Email notifications
 - Webhook integrations
-- Advanced search with saved queries
 - Template system for bulk operations
 - Integration with monitoring systems (Prometheus/Grafana)
 
