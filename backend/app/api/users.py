@@ -4,7 +4,9 @@ User Management API endpoints
 """
 
 import ldap
+import asyncio
 from fastapi import APIRouter, HTTPException, status, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from app.models.user import (
     UserCreate, UserUpdate, UserResponse, UserListResponse,
@@ -14,6 +16,9 @@ from app.auth.jwt import get_current_user, require_admin, require_operator
 from app.ldap.connection import get_ldap_connection
 from app.config import get_config
 from app.auth.jwt import get_password_hash
+from app.db.base import get_session
+from app.db.models import AuditAction
+from app.db.audit import get_audit_logger
 import logging
 
 logger = logging.getLogger(__name__)
@@ -188,6 +193,7 @@ async def get_user(
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user: UserCreate,
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(require_operator)
 ):
     """
@@ -195,6 +201,7 @@ async def create_user(
     
     Args:
         user: User information
+        session: Database session for audit logging
         current_user: Authenticated user (operator or admin)
         
     Returns:
@@ -249,6 +256,23 @@ async def create_user(
         ldap_conn.add(user_dn, attributes)
         logger.info(f"User created: {user.uid} by {current_user.get('username')}")
         
+        # Audit log
+        audit = await get_audit_logger(session)
+        await audit.log_user_action(
+            AuditAction.CREATE,
+            username=user.uid,
+            user_id=current_user.get('username'),
+            details={
+                'uidNumber': user.uidNumber,
+                'gidNumber': user.gidNumber,
+                'cn': user.cn,
+                'mail': user.mail,
+                'homeDirectory': user.homeDirectory,
+                'loginShell': user.loginShell
+            }
+        )
+        await session.commit()
+        
         # Retrieve and return created user
         return await get_user(user.uid, current_user)
         
@@ -259,6 +283,18 @@ async def create_user(
         )
     except ldap.LDAPError as e:
         logger.error(f"LDAP error creating user: {e}")
+        
+        # Audit log failure
+        audit = await get_audit_logger(session)
+        await audit.log_user_action(
+            AuditAction.CREATE,
+            username=user.uid,
+            user_id=current_user.get('username'),
+            status="failure",
+            details={'error': str(e)}
+        )
+        await session.commit()
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create user: {str(e)}"
@@ -269,6 +305,7 @@ async def create_user(
 async def update_user(
     username: str,
     user_update: UserUpdate,
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(require_operator)
 ):
     """
@@ -277,6 +314,7 @@ async def update_user(
     Args:
         username: Username (uid)
         user_update: Fields to update
+        session: Database session for audit logging
         current_user: Authenticated user (operator or admin)
         
     Returns:
@@ -311,6 +349,16 @@ async def update_user(
         ldap_conn.modify(user_dn, modifications)
         logger.info(f"User updated: {username} by {current_user.get('username')}")
         
+        # Audit log
+        audit = await get_audit_logger(session)
+        await audit.log_user_action(
+            AuditAction.UPDATE,
+            username=username,
+            user_id=current_user.get('username'),
+            details=update_dict
+        )
+        await session.commit()
+        
         # Retrieve and return updated user
         return await get_user(username, current_user)
         
@@ -321,6 +369,18 @@ async def update_user(
         )
     except ldap.LDAPError as e:
         logger.error(f"LDAP error updating user: {e}")
+        
+        # Audit log failure
+        audit = await get_audit_logger(session)
+        await audit.log_user_action(
+            AuditAction.UPDATE,
+            username=username,
+            user_id=current_user.get('username'),
+            status="failure",
+            details={'error': str(e)}
+        )
+        await session.commit()
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update user: {str(e)}"
@@ -330,6 +390,7 @@ async def update_user(
 @router.delete("/{username}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     username: str,
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(require_admin)
 ):
     """
@@ -337,6 +398,7 @@ async def delete_user(
     
     Args:
         username: Username (uid)
+        session: Database session for audit logging
         current_user: Authenticated user (admin only)
         
     Raises:
@@ -352,6 +414,15 @@ async def delete_user(
         ldap_conn.delete(user_dn)
         logger.info(f"User deleted: {username} by {current_user.get('username')}")
         
+        # Audit log
+        audit = await get_audit_logger(session)
+        await audit.log_user_action(
+            AuditAction.DELETE,
+            username=username,
+            user_id=current_user.get('username')
+        )
+        await session.commit()
+        
     except ldap.NO_SUCH_OBJECT:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -359,6 +430,18 @@ async def delete_user(
         )
     except ldap.LDAPError as e:
         logger.error(f"LDAP error deleting user: {e}")
+        
+        # Audit log failure
+        audit = await get_audit_logger(session)
+        await audit.log_user_action(
+            AuditAction.DELETE,
+            username=username,
+            user_id=current_user.get('username'),
+            status="failure",
+            details={'error': str(e)}
+        )
+        await session.commit()
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete user: {str(e)}"
@@ -369,6 +452,7 @@ async def delete_user(
 async def reset_password(
     username: str,
     password_reset: UserPasswordReset,
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(require_admin)
 ):
     """
@@ -377,6 +461,7 @@ async def reset_password(
     Args:
         username: Username (uid)
         password_reset: New password
+        session: Database session for audit logging
         current_user: Authenticated user (admin only)
         
     Raises:
@@ -399,6 +484,16 @@ async def reset_password(
         ldap_conn.modify(user_dn, modifications)
         logger.info(f"Password reset for user: {username} by {current_user.get('username')}")
         
+        # Audit log
+        audit = await get_audit_logger(session)
+        await audit.log_user_action(
+            AuditAction.UPDATE,
+            username=username,
+            user_id=current_user.get('username'),
+            details={'action': 'password_reset'}
+        )
+        await session.commit()
+        
     except ldap.NO_SUCH_OBJECT:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -406,6 +501,18 @@ async def reset_password(
         )
     except ldap.LDAPError as e:
         logger.error(f"LDAP error resetting password: {e}")
+        
+        # Audit log failure
+        audit = await get_audit_logger(session)
+        await audit.log_user_action(
+            AuditAction.UPDATE,
+            username=username,
+            user_id=current_user.get('username'),
+            status="failure",
+            details={'action': 'password_reset', 'error': str(e)}
+        )
+        await session.commit()
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to reset password: {str(e)}"
