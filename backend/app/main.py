@@ -15,7 +15,7 @@ import logging
 from pathlib import Path
 
 # Import routers
-from app.api import auth, users, groups, dns, dhcp, ipam, service_accounts, audit, bulk, ipam_advanced
+from app.api import auth, users, groups, dns, dhcp, ipam, service_accounts, audit, bulk, ipam_advanced, health
 from app.db.base import get_database
 from app.config import get_config
 
@@ -235,6 +235,7 @@ async def version_info():
 
 
 # Include routers
+app.include_router(health.router, tags=["Health"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(groups.router, prefix="/api/groups", tags=["Groups"])
