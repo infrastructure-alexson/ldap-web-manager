@@ -1,548 +1,720 @@
 #!/usr/bin/env python3
 """
 IPAM (IP Address Management) API endpoints
+Uses PostgreSQL backend with audit logging
 """
 
-import sqlite3
 from fastapi import APIRouter, HTTPException, status, Depends, Query
-from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, and_, or_, func
+from typing import Optional, List
 import ipaddress
-import json
-from pathlib import Path
+import logging
 from datetime import datetime
+
 from app.models.ipam import (
     IPPoolCreate, IPPoolUpdate, IPPoolResponse, IPPoolListResponse,
     IPAllocationCreate, IPAllocationUpdate, IPAllocationResponse, IPAllocationListResponse,
-    IPPoolStatsResponse, IPConflictResponse, IPAMStatsResponse,
+    IPPoolStatsResponse, IPAMStatsResponse,
     IPSearchRequest, IPSearchResponse
 )
 from app.auth.jwt import get_current_user, require_admin, require_operator
-import logging
+from app.db.base import get_session
+from app.db.models import IPPool, IPAllocation, AuditAction
+from app.db.audit import get_audit_logger
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter()
-
-# Database path
-DB_PATH = Path("/var/lib/ldap-web-manager/ipam.db")
-DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-
-
-def get_db():
-    """Get database connection"""
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def init_db():
-    """Initialize IPAM database"""
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # Create pools table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS ip_pools (
-            id TEXT PRIMARY KEY,
-            name TEXT UNIQUE NOT NULL,
-            network TEXT NOT NULL,
-            description TEXT,
-            vlan_id INTEGER,
-            gateway TEXT,
-            dns_servers TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    
-    # Create allocations table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS ip_allocations (
-            id TEXT PRIMARY KEY,
-            pool_id TEXT NOT NULL,
-            ip_address TEXT NOT NULL,
-            hostname TEXT,
-            mac_address TEXT,
-            allocation_type TEXT NOT NULL,
-            description TEXT,
-            allocated_by TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (pool_id) REFERENCES ip_pools(id) ON DELETE CASCADE,
-            UNIQUE(pool_id, ip_address)
-        )
-    """)
-    
-    # Create indexes
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_allocations_pool ON ip_allocations(pool_id)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_allocations_ip ON ip_allocations(ip_address)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_allocations_hostname ON ip_allocations(hostname)")
-    
-    conn.commit()
-    conn.close()
-
-
-# Initialize database on module load
-init_db()
-
-
-def calculate_pool_stats(pool_id: str, network: str) -> dict:
-    """Calculate statistics for an IP pool"""
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # Parse network
-    net = ipaddress.IPv4Network(network, strict=False)
-    total_ips = net.num_addresses - 2  # Exclude network and broadcast
-    
-    # Count allocations
-    cursor.execute(
-        "SELECT COUNT(*), allocation_type FROM ip_allocations WHERE pool_id = ? GROUP BY allocation_type",
-        (pool_id,)
-    )
-    allocations = cursor.fetchall()
-    
-    used_ips = sum(row[0] for row in allocations)
-    available_ips = total_ips - used_ips
-    utilization = (used_ips / total_ips * 100) if total_ips > 0 else 0
-    
-    conn.close()
-    
-    return {
-        "total_ips": total_ips,
-        "used_ips": used_ips,
-        "available_ips": available_ips,
-        "utilization_percent": round(utilization, 2)
-    }
 
 
 # ============================================================================
-# IP POOLS
+# IP Pools Endpoints
 # ============================================================================
 
 @router.get("/pools", response_model=IPPoolListResponse)
 async def list_pools(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=100),
-    search: Optional[str] = None,
-    current_user: dict = Depends(get_current_user)
+    page_size: int = Query(20, ge=1, le=100),
+    active_only: bool = Query(True),
+    session: AsyncSession = Depends(get_session),
+    current_user: dict = Depends(require_operator)
 ):
     """
     List all IP pools
     
-    Args:
-        page: Page number
-        page_size: Items per page
-        search: Search term
-        current_user: Authenticated user
-        
-    Returns:
-        List of IP pools
+    Query Parameters:
+        page: Page number (default: 1)
+        page_size: Items per page (default: 20, max: 100)
+        active_only: Only show active pools (default: true)
     """
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # Build query
-    if search:
-        query = "SELECT * FROM ip_pools WHERE name LIKE ? OR network LIKE ? OR description LIKE ?"
-        params = (f"%{search}%", f"%{search}%", f"%{search}%")
-    else:
-        query = "SELECT * FROM ip_pools"
-        params = ()
-    
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
-    
-    # Convert to response objects
-    pools = []
-    for row in rows:
-        stats = calculate_pool_stats(row['id'], row['network'])
-        dns_servers = json.loads(row['dns_servers']) if row['dns_servers'] else None
+    try:
+        # Build query
+        query = select(IPPool)
         
-        pool_data = {
-            'id': row['id'],
-            'name': row['name'],
-            'network': row['network'],
-            'description': row['description'],
-            'vlan_id': row['vlan_id'],
-            'gateway': row['gateway'],
-            'dns_servers': dns_servers,
-            'total_ips': stats['total_ips'],
-            'used_ips': stats['used_ips'],
-            'available_ips': stats['available_ips'],
-            'utilization_percent': stats['utilization_percent'],
-            'createTimestamp': row['created_at'],
-            'modifyTimestamp': row['modified_at'],
-        }
-        pools.append(IPPoolResponse(**pool_data))
+        if active_only:
+            query = query.where(IPPool.is_active == True)
+        
+        # Get total count
+        count_result = await session.execute(select(func.count()).select_from(IPPool))
+        total = count_result.scalar() or 0
+        
+        # Apply pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size).order_by(IPPool.name)
+        
+        result = await session.execute(query)
+        pools = result.scalars().all()
+        
+        # Convert to response models with stats
+        pool_responses = []
+        for pool in pools:
+            response = await _pool_to_response(pool, session)
+            pool_responses.append(response)
+        
+        return IPPoolListResponse(
+            pools=pool_responses,
+            total=total,
+            page=page,
+            page_size=page_size
+        )
     
-    # Pagination
-    total = len(pools)
-    start = (page - 1) * page_size
-    end = start + page_size
-    paginated_pools = pools[start:end]
-    
-    conn.close()
-    
-    return {
-        "pools": paginated_pools,
-        "total": total,
-        "page": page,
-        "page_size": page_size
-    }
+    except Exception as e:
+        logger.error(f"Error listing IP pools: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to list IP pools"
+        )
 
 
 @router.post("/pools", response_model=IPPoolResponse, status_code=status.HTTP_201_CREATED)
 async def create_pool(
     pool: IPPoolCreate,
-    current_user: dict = Depends(require_operator)
+    session: AsyncSession = Depends(get_session),
+    current_user: dict = Depends(require_admin)
 ):
     """
-    Create new IP pool
+    Create a new IP pool
     
-    Args:
-        pool: Pool information
-        current_user: Authenticated user (operator or admin)
-        
-    Returns:
-        Created pool
+    Request Body:
+        name: Pool name (unique)
+        network: Network address (CIDR notation, e.g., 10.0.0.0/24)
+        description: Optional description
+        vlan_id: Optional VLAN ID
+        gateway: Optional default gateway
     """
-    import uuid
-    
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    pool_id = str(uuid.uuid4())
-    dns_json = json.dumps(pool.dns_servers) if pool.dns_servers else None
-    
     try:
-        cursor.execute("""
-            INSERT INTO ip_pools (id, name, network, description, vlan_id, gateway, dns_servers)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (pool_id, pool.name, pool.network, pool.description, pool.vlan_id, pool.gateway, dns_json))
+        # Validate network format
+        try:
+            net = ipaddress.ip_network(pool.network, strict=False)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid network format: {str(e)}"
+            )
         
-        conn.commit()
-        logger.info(f"IP pool created: {pool.name} by {current_user.get('username')}")
+        # Check if pool name already exists
+        existing = await session.execute(
+            select(IPPool).where(IPPool.name == pool.name)
+        )
+        if existing.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Pool '{pool.name}' already exists"
+            )
         
-        # Return created pool
-        stats = calculate_pool_stats(pool_id, pool.network)
+        # Check if network already exists
+        existing_net = await session.execute(
+            select(IPPool).where(IPPool.network == str(net.cidr))
+        )
+        if existing_net.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Network {pool.network} already allocated"
+            )
         
-        conn.close()
-        
-        return IPPoolResponse(
-            id=pool_id,
+        # Create new pool
+        new_pool = IPPool(
             name=pool.name,
-            network=pool.network,
+            network=str(net.cidr),
+            gateway=pool.gateway,
             description=pool.description,
             vlan_id=pool.vlan_id,
-            gateway=pool.gateway,
-            dns_servers=pool.dns_servers,
-            **stats
+            created_by=current_user.get("username"),
+            is_active=True
         )
         
-    except sqlite3.IntegrityError:
-        conn.close()
+        session.add(new_pool)
+        await session.flush()
+        
+        # Audit log
+        audit = await get_audit_logger(session)
+        await audit.log_ipam_action(
+            AuditAction.CREATE,
+            pool_name=new_pool.name,
+            resource_id=new_pool.id,
+            user_id=current_user.get("username"),
+            details={
+                "network": str(net.cidr),
+                "vlan_id": pool.vlan_id,
+                "description": pool.description
+            }
+        )
+        
+        await session.commit()
+        
+        logger.info(f"Created IP pool: {new_pool.name} ({new_pool.network})")
+        
+        response = await _pool_to_response(new_pool, session)
+        return response
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating IP pool: {e}", exc_info=True)
+        await session.rollback()
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"IP pool already exists: {pool.name}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create IP pool"
+        )
+
+
+@router.get("/pools/{pool_id}", response_model=IPPoolResponse)
+async def get_pool(
+    pool_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: dict = Depends(require_operator)
+):
+    """Get a specific IP pool by ID"""
+    try:
+        result = await session.execute(select(IPPool).where(IPPool.id == pool_id))
+        pool = result.scalar_one_or_none()
+        
+        if not pool:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Pool ID {pool_id} not found"
+            )
+        
+        response = await _pool_to_response(pool, session)
+        return response
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting IP pool: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve IP pool"
+        )
+
+
+@router.put("/pools/{pool_id}", response_model=IPPoolResponse)
+async def update_pool(
+    pool_id: int,
+    pool_update: IPPoolUpdate,
+    session: AsyncSession = Depends(get_session),
+    current_user: dict = Depends(require_admin)
+):
+    """Update an IP pool"""
+    try:
+        result = await session.execute(select(IPPool).where(IPPool.id == pool_id))
+        pool = result.scalar_one_or_none()
+        
+        if not pool:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Pool ID {pool_id} not found"
+            )
+        
+        # Audit log - capture before state
+        audit = await get_audit_logger(session)
+        before_state = {
+            "description": pool.description,
+            "vlan_id": pool.vlan_id,
+            "gateway": pool.gateway
+        }
+        
+        # Update fields
+        if pool_update.description is not None:
+            pool.description = pool_update.description
+        if pool_update.vlan_id is not None:
+            pool.vlan_id = pool_update.vlan_id
+        if pool_update.gateway is not None:
+            pool.gateway = pool_update.gateway
+        
+        pool.updated_at = datetime.utcnow()
+        
+        await session.flush()
+        
+        # Audit log
+        after_state = {
+            "description": pool.description,
+            "vlan_id": pool.vlan_id,
+            "gateway": pool.gateway
+        }
+        
+        await audit.log_ipam_action(
+            AuditAction.UPDATE,
+            pool_name=pool.name,
+            resource_id=pool.id,
+            user_id=current_user.get("username"),
+            details={"before": before_state, "after": after_state}
+        )
+        
+        await session.commit()
+        
+        logger.info(f"Updated IP pool: {pool.name}")
+        
+        response = await _pool_to_response(pool, session)
+        return response
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating IP pool: {e}", exc_info=True)
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update IP pool"
         )
 
 
 @router.delete("/pools/{pool_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_pool(
-    pool_id: str,
+    pool_id: int,
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(require_admin)
 ):
-    """
-    Delete IP pool
-    
-    Args:
-        pool_id: Pool ID
-        current_user: Authenticated user (admin only)
-    """
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    cursor.execute("DELETE FROM ip_pools WHERE id = ?", (pool_id,))
-    
-    if cursor.rowcount == 0:
-        conn.close()
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"IP pool not found: {pool_id}"
+    """Delete an IP pool (and all allocations)"""
+    try:
+        result = await session.execute(select(IPPool).where(IPPool.id == pool_id))
+        pool = result.scalar_one_or_none()
+        
+        if not pool:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Pool ID {pool_id} not found"
+            )
+        
+        pool_name = pool.name
+        
+        # Audit log
+        audit = await get_audit_logger(session)
+        
+        # Count allocations before deletion
+        alloc_result = await session.execute(
+            select(func.count()).select_from(IPAllocation).where(IPAllocation.pool_id == pool_id)
         )
+        alloc_count = alloc_result.scalar() or 0
+        
+        # Delete pool (cascades to allocations)
+        await session.delete(pool)
+        await session.flush()
+        
+        # Audit log
+        await audit.log_ipam_action(
+            AuditAction.DELETE,
+            pool_name=pool_name,
+            resource_id=pool_id,
+            user_id=current_user.get("username"),
+            details={"allocations_deleted": alloc_count}
+        )
+        
+        await session.commit()
+        
+        logger.info(f"Deleted IP pool: {pool_name} (removed {alloc_count} allocations)")
     
-    conn.commit()
-    conn.close()
-    logger.info(f"IP pool deleted: {pool_id} by {current_user.get('username')}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting IP pool: {e}", exc_info=True)
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete IP pool"
+        )
 
 
 # ============================================================================
-# IP ALLOCATIONS
+# IP Allocations Endpoints
 # ============================================================================
 
 @router.get("/pools/{pool_id}/allocations", response_model=IPAllocationListResponse)
 async def list_allocations(
-    pool_id: str,
-    current_user: dict = Depends(get_current_user)
-):
-    """
-    List all IP allocations in a pool
-    
-    Args:
-        pool_id: Pool ID
-        current_user: Authenticated user
-        
-    Returns:
-        List of IP allocations
-    """
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # Verify pool exists
-    cursor.execute("SELECT name FROM ip_pools WHERE id = ?", (pool_id,))
-    pool = cursor.fetchone()
-    if not pool:
-        conn.close()
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"IP pool not found: {pool_id}"
-        )
-    
-    # Get allocations
-    cursor.execute("""
-        SELECT * FROM ip_allocations WHERE pool_id = ? ORDER BY ip_address
-    """, (pool_id,))
-    rows = cursor.fetchall()
-    
-    allocations = []
-    for row in rows:
-        alloc_data = {
-            'id': row['id'],
-            'pool_id': row['pool_id'],
-            'ip_address': row['ip_address'],
-            'hostname': row['hostname'],
-            'mac_address': row['mac_address'],
-            'allocation_type': row['allocation_type'],
-            'description': row['description'],
-            'allocated_at': row['created_at'],
-            'allocated_by': row['allocated_by'],
-            'createTimestamp': row['created_at'],
-            'modifyTimestamp': row['modified_at'],
-        }
-        allocations.append(IPAllocationResponse(**alloc_data))
-    
-    conn.close()
-    
-    return {
-        "allocations": allocations,
-        "total": len(allocations),
-        "pool": pool['name']
-    }
-
-
-@router.post("/allocations", response_model=IPAllocationResponse, status_code=status.HTTP_201_CREATED)
-async def create_allocation(
-    allocation: IPAllocationCreate,
+    pool_id: int,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
+    status_filter: Optional[str] = Query(None),
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(require_operator)
 ):
     """
-    Create new IP allocation
+    List all allocations in a pool
     
-    Args:
-        allocation: Allocation information
-        current_user: Authenticated user (operator or admin)
-        
-    Returns:
-        Created allocation
+    Query Parameters:
+        pool_id: Pool ID
+        page: Page number (default: 1)
+        page_size: Items per page (default: 50, max: 500)
+        status_filter: Filter by status (available, allocated, reserved, blocked)
     """
-    import uuid
-    
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    alloc_id = str(uuid.uuid4())
-    username = current_user.get('username')
-    
     try:
-        cursor.execute("""
-            INSERT INTO ip_allocations (id, pool_id, ip_address, hostname, mac_address, 
-                                       allocation_type, description, allocated_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (alloc_id, allocation.pool_id, allocation.ip_address, allocation.hostname,
-              allocation.mac_address, allocation.allocation_type, allocation.description, username))
+        # Verify pool exists
+        pool_result = await session.execute(select(IPPool).where(IPPool.id == pool_id))
+        pool = pool_result.scalar_one_or_none()
         
-        conn.commit()
-        conn.close()
+        if not pool:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Pool ID {pool_id} not found"
+            )
         
-        logger.info(f"IP allocated: {allocation.ip_address} by {username}")
+        # Build query
+        query = select(IPAllocation).where(IPAllocation.pool_id == pool_id)
         
-        return IPAllocationResponse(
-            id=alloc_id,
-            pool_id=allocation.pool_id,
+        if status_filter:
+            query = query.where(IPAllocation.status == status_filter)
+        
+        # Get total count
+        count_result = await session.execute(
+            select(func.count()).select_from(IPAllocation).where(IPAllocation.pool_id == pool_id)
+        )
+        total = count_result.scalar() or 0
+        
+        # Apply pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size).order_by(IPAllocation.ip_address)
+        
+        result = await session.execute(query)
+        allocations = result.scalars().all()
+        
+        # Convert to response models
+        allocation_responses = [_allocation_to_response(a) for a in allocations]
+        
+        return IPAllocationListResponse(
+            allocations=allocation_responses,
+            total=total,
+            pool=pool.name
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error listing allocations: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to list allocations"
+        )
+
+
+@router.post("/pools/{pool_id}/allocations", response_model=IPAllocationResponse, status_code=status.HTTP_201_CREATED)
+async def create_allocation(
+    pool_id: int,
+    allocation: IPAllocationCreate,
+    session: AsyncSession = Depends(get_session),
+    current_user: dict = Depends(require_operator)
+):
+    """
+    Create a new IP allocation
+    
+    Request Body:
+        ip_address: IP address to allocate
+        hostname: Optional hostname
+        mac_address: Optional MAC address
+        owner: Owner of the allocation
+        purpose: Purpose (server, workstation, printer, etc.)
+        description: Optional description
+    """
+    try:
+        # Verify pool exists
+        pool_result = await session.execute(select(IPPool).where(IPPool.id == pool_id))
+        pool = pool_result.scalar_one_or_none()
+        
+        if not pool:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Pool ID {pool_id} not found"
+            )
+        
+        # Validate IP is in pool network
+        try:
+            ip = ipaddress.ip_address(allocation.ip_address)
+            network = ipaddress.ip_network(pool.network, strict=False)
+            
+            if ip not in network:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"IP address {allocation.ip_address} not in pool network {pool.network}"
+                )
+        except ipaddress.AddressValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid IP address: {str(e)}"
+            )
+        
+        # Check if IP already allocated
+        existing = await session.execute(
+            select(IPAllocation).where(
+                and_(
+                    IPAllocation.pool_id == pool_id,
+                    IPAllocation.ip_address == allocation.ip_address
+                )
+            )
+        )
+        if existing.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"IP address {allocation.ip_address} already allocated in this pool"
+            )
+        
+        # Create allocation
+        new_allocation = IPAllocation(
+            pool_id=pool_id,
             ip_address=allocation.ip_address,
-            hostname=allocation.hostname,
             mac_address=allocation.mac_address,
-            allocation_type=allocation.allocation_type,
+            hostname=allocation.hostname,
+            owner=allocation.owner,
+            purpose=allocation.purpose,
             description=allocation.description,
-            allocated_by=username
+            status="allocated",
+            allocated_at=datetime.utcnow(),
+            allocated_by=current_user.get("username")
         )
         
-    except sqlite3.IntegrityError:
-        conn.close()
+        session.add(new_allocation)
+        await session.flush()
+        
+        # Audit log
+        audit = await get_audit_logger(session)
+        await audit.log_allocation_action(
+            AuditAction.CREATE,
+            ip_address=new_allocation.ip_address,
+            user_id=current_user.get("username"),
+            details={
+                "pool_name": pool.name,
+                "hostname": allocation.hostname,
+                "mac_address": allocation.mac_address,
+                "owner": allocation.owner,
+                "purpose": allocation.purpose
+            }
+        )
+        
+        await session.commit()
+        
+        logger.info(f"Created allocation: {new_allocation.ip_address} in pool {pool.name}")
+        
+        return _allocation_to_response(new_allocation)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating allocation: {e}", exc_info=True)
+        await session.rollback()
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"IP address already allocated: {allocation.ip_address}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create allocation"
         )
 
 
 @router.delete("/allocations/{allocation_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_allocation(
-    allocation_id: str,
+async def release_allocation(
+    allocation_id: int,
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(require_operator)
 ):
     """
-    Delete IP allocation
-    
-    Args:
-        allocation_id: Allocation ID
-        current_user: Authenticated user (operator or admin)
+    Release (delete) an IP allocation
     """
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    cursor.execute("DELETE FROM ip_allocations WHERE id = ?", (allocation_id,))
-    
-    if cursor.rowcount == 0:
-        conn.close()
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"IP allocation not found: {allocation_id}"
+    try:
+        result = await session.execute(
+            select(IPAllocation).where(IPAllocation.id == allocation_id)
         )
+        allocation = result.scalar_one_or_none()
+        
+        if not allocation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Allocation ID {allocation_id} not found"
+            )
+        
+        ip_address = allocation.ip_address
+        pool_id = allocation.pool_id
+        
+        # Get pool for logging
+        pool_result = await session.execute(
+            select(IPPool).where(IPPool.id == pool_id)
+        )
+        pool = pool_result.scalar_one_or_none()
+        
+        # Audit log
+        audit = await get_audit_logger(session)
+        await audit.log_allocation_action(
+            AuditAction.DELETE,
+            ip_address=ip_address,
+            user_id=current_user.get("username"),
+            details={
+                "pool_name": pool.name if pool else "unknown",
+                "hostname": allocation.hostname,
+                "owner": allocation.owner
+            }
+        )
+        
+        # Delete allocation
+        await session.delete(allocation)
+        await session.commit()
+        
+        logger.info(f"Released allocation: {ip_address}")
     
-    conn.commit()
-    conn.close()
-    logger.info(f"IP allocation deleted: {allocation_id} by {current_user.get('username')}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error releasing allocation: {e}", exc_info=True)
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to release allocation"
+        )
 
 
 # ============================================================================
-# IPAM STATISTICS
+# Statistics Endpoints
 # ============================================================================
 
 @router.get("/stats", response_model=IPAMStatsResponse)
-async def get_stats(
-    current_user: dict = Depends(get_current_user)
+async def get_ipam_stats(
+    session: AsyncSession = Depends(get_session),
+    current_user: dict = Depends(require_operator)
 ):
-    """
-    Get IPAM statistics
-    
-    Args:
-        current_user: Authenticated user
+    """Get overall IPAM statistics"""
+    try:
+        # Get pool counts
+        pool_result = await session.execute(select(func.count()).select_from(IPPool))
+        total_pools = pool_result.scalar() or 0
         
-    Returns:
-        IPAM statistics
-    """
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # Count pools
-    cursor.execute("SELECT COUNT(*) FROM ip_pools")
-    total_pools = cursor.fetchone()[0]
-    
-    # Get all pools and calculate stats
-    cursor.execute("SELECT id, name, network FROM ip_pools")
-    pools = cursor.fetchall()
-    
-    total_ips = 0
-    allocated_ips = 0
-    pools_stats = []
-    
-    for pool in pools:
-        stats = calculate_pool_stats(pool['id'], pool['network'])
-        total_ips += stats['total_ips']
-        allocated_ips += stats['used_ips']
+        # Get allocation stats
+        alloc_result = await session.execute(
+            select(
+                func.count(IPAllocation.id),
+                func.sum(func.cast(IPAllocation.status == "allocated", func.Integer))
+            ).select_from(IPAllocation)
+        )
+        total_allocations, allocated_count = alloc_result.one()
+        total_allocations = total_allocations or 0
+        allocated_count = allocated_count or 0
+        available = total_allocations - allocated_count
         
-        pools_stats.append({
-            'pool_name': pool['name'],
-            'utilization': stats['utilization_percent']
-        })
+        # Calculate utilization
+        utilization = (allocated_count / total_allocations * 100) if total_allocations > 0 else 0
+        
+        return IPAMStatsResponse(
+            total_pools=total_pools,
+            total_networks=total_pools,
+            total_ip_addresses=total_allocations,
+            allocated_addresses=allocated_count,
+            available_addresses=available,
+            reserved_addresses=0,  # TODO: Implement reserved tracking
+            utilization_percent=round(utilization, 2),
+            pools_by_utilization=[]  # TODO: Implement detailed stats
+        )
     
-    # Count reserved
-    cursor.execute("SELECT COUNT(*) FROM ip_allocations WHERE allocation_type = 'reserved'")
-    reserved = cursor.fetchone()[0]
-    
-    conn.close()
-    
-    available = total_ips - allocated_ips
-    utilization = (allocated_ips / total_ips * 100) if total_ips > 0 else 0
-    
-    return {
-        "total_pools": total_pools,
-        "total_networks": total_pools,
-        "total_ip_addresses": total_ips,
-        "allocated_addresses": allocated_ips,
-        "available_addresses": available,
-        "reserved_addresses": reserved,
-        "utilization_percent": round(utilization, 2),
-        "pools_by_utilization": sorted(pools_stats, key=lambda x: x['utilization'], reverse=True)
-    }
+    except Exception as e:
+        logger.error(f"Error getting IPAM stats: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve IPAM statistics"
+        )
 
 
-# ============================================================================
-# IP SEARCH
-# ============================================================================
-
-@router.post("/search", response_model=IPSearchResponse)
+@router.get("/search", response_model=IPSearchResponse)
 async def search_ips(
-    search: IPSearchRequest,
-    current_user: dict = Depends(get_current_user)
+    query: str = Query(..., description="IP, hostname, or MAC to search"),
+    session: AsyncSession = Depends(get_session),
+    current_user: dict = Depends(require_operator)
 ):
     """
     Search for IP allocations
     
-    Args:
-        search: Search parameters
-        current_user: Authenticated user
-        
-    Returns:
-        Search results
+    Query Parameters:
+        query: IP address, hostname, or MAC address to search for
     """
-    conn = get_db()
-    cursor = conn.cursor()
+    try:
+        # Build search query
+        search_filter = or_(
+            IPAllocation.ip_address.ilike(f"%{query}%"),
+            IPAllocation.hostname.ilike(f"%{query}%"),
+            IPAllocation.mac_address.ilike(f"%{query}%"),
+            IPAllocation.owner.ilike(f"%{query}%")
+        )
+        
+        result = await session.execute(
+            select(IPAllocation).where(search_filter).limit(100)
+        )
+        allocations = result.scalars().all()
+        
+        allocation_responses = [_allocation_to_response(a) for a in allocations]
+        
+        return IPSearchResponse(
+            results=allocation_responses,
+            total=len(allocation_responses)
+        )
     
-    query = search.query
-    pool_filter = f"AND pool_id = '{search.pool_id}'" if search.pool_id else ""
-    
-    cursor.execute(f"""
-        SELECT * FROM ip_allocations 
-        WHERE (ip_address LIKE ? OR hostname LIKE ? OR mac_address LIKE ?)
-        {pool_filter}
-        ORDER BY ip_address
-        LIMIT 100
-    """, (f"%{query}%", f"%{query}%", f"%{query}%"))
-    
-    rows = cursor.fetchall()
-    
-    results = []
-    for row in rows:
-        results.append(IPAllocationResponse(
-            id=row['id'],
-            pool_id=row['pool_id'],
-            ip_address=row['ip_address'],
-            hostname=row['hostname'],
-            mac_address=row['mac_address'],
-            allocation_type=row['allocation_type'],
-            description=row['description'],
-            allocated_at=row['created_at'],
-            allocated_by=row['allocated_by'],
-            createTimestamp=row['created_at'],
-            modifyTimestamp=row['modified_at'],
-        ))
-    
-    conn.close()
-    
-    return {
-        "results": results,
-        "total": len(results)
-    }
+    except Exception as e:
+        logger.error(f"Error searching IPs: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to search IP allocations"
+        )
 
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+async def _pool_to_response(pool: IPPool, session: AsyncSession) -> IPPoolResponse:
+    """Convert IPPool database model to response model"""
+    # Calculate statistics
+    alloc_result = await session.execute(
+        select(func.count()).select_from(IPAllocation).where(IPAllocation.pool_id == pool.id)
+    )
+    used_ips = alloc_result.scalar() or 0
+    
+    # Calculate total IPs in network (excluding network and broadcast)
+    try:
+        net = ipaddress.ip_network(pool.network, strict=False)
+        total_ips = max(1, net.num_addresses - 2)  # Exclude network and broadcast
+    except:
+        total_ips = 0
+    
+    available_ips = max(0, total_ips - used_ips)
+    utilization_percent = (used_ips / total_ips * 100) if total_ips > 0 else 0
+    
+    return IPPoolResponse(
+        id=pool.id,
+        name=pool.name,
+        network=str(pool.network),
+        description=pool.description,
+        vlan_id=pool.vlan_id,
+        gateway=pool.gateway,
+        total_ips=total_ips,
+        used_ips=used_ips,
+        available_ips=available_ips,
+        utilization_percent=round(utilization_percent, 2),
+        createTimestamp=pool.created_at.isoformat() if pool.created_at else None,
+        modifyTimestamp=pool.updated_at.isoformat() if pool.updated_at else None
+    )
+
+
+def _allocation_to_response(allocation: IPAllocation) -> IPAllocationResponse:
+    """Convert IPAllocation database model to response model"""
+    return IPAllocationResponse(
+        id=allocation.id,
+        pool_id=allocation.pool_id,
+        ip_address=allocation.ip_address,
+        hostname=allocation.hostname,
+        mac_address=allocation.mac_address,
+        allocation_type=allocation.status,  # Map status to allocation_type for compatibility
+        description=allocation.description,
+        allocated_at=allocation.allocated_at.isoformat() if allocation.allocated_at else None,
+        allocated_by=allocation.allocated_by,
+        createTimestamp=allocation.created_at.isoformat() if allocation.created_at else None,
+        modifyTimestamp=allocation.updated_at.isoformat() if allocation.updated_at else None
+    )

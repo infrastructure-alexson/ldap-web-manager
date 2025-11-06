@@ -53,13 +53,12 @@ class IPPoolUpdate(BaseModel):
 
 class IPPoolResponse(BaseModel):
     """IP pool response model"""
-    id: str
+    id: int
     name: str
     network: str
     description: Optional[str] = None
     vlan_id: Optional[int] = None
     gateway: Optional[str] = None
-    dns_servers: Optional[List[str]] = None
     total_ips: int
     used_ips: int
     available_ips: int
@@ -84,7 +83,9 @@ class IPAllocationBase(BaseModel):
     ip_address: str = Field(..., description="IP address")
     hostname: Optional[str] = Field(None, description="Hostname")
     mac_address: Optional[str] = Field(None, description="MAC address")
-    allocation_type: str = Field(..., description="Type: static, dhcp, reserved")
+    owner: Optional[str] = Field(None, description="Owner or assigned user")
+    purpose: Optional[str] = Field(None, description="Purpose (server, workstation, printer, etc.)")
+    allocation_type: Optional[str] = Field(None, description="Type: static, dhcp, reserved")
     description: Optional[str] = Field(None, description="Description")
     
     @validator('ip_address')
@@ -107,7 +108,7 @@ class IPAllocationBase(BaseModel):
 
 class IPAllocationCreate(IPAllocationBase):
     """IP allocation creation model"""
-    pool_id: str = Field(..., description="Pool ID")
+    pool_id: Optional[int] = Field(None, description="Pool ID")
 
 
 class IPAllocationUpdate(BaseModel):
@@ -120,12 +121,12 @@ class IPAllocationUpdate(BaseModel):
 
 class IPAllocationResponse(BaseModel):
     """IP allocation response model"""
-    id: str
-    pool_id: str
+    id: int
+    pool_id: int
     ip_address: str
     hostname: Optional[str] = None
     mac_address: Optional[str] = None
-    allocation_type: str
+    allocation_type: Optional[str] = None
     description: Optional[str] = None
     allocated_at: Optional[str] = None
     allocated_by: Optional[str] = None
