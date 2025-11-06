@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import {
@@ -89,8 +89,9 @@ const Layout = () => {
 
           {/* User info & Theme toggle */}
           <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700' : ''}`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
+            <Link to="/profile" className={`block mb-4 p-2 rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
                   <span className="text-primary-600 font-semibold">
                     {user?.username?.charAt(0).toUpperCase()}
@@ -104,15 +105,15 @@ const Layout = () => {
                     {user?.role}
                   </p>
                 </div>
+                <button
+                  onClick={logout}
+                  className={`p-2 transition-colors ${isDarkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-600'}`}
+                  title="Logout"
+                >
+                  <FiLogOut className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                onClick={logout}
-                className={`p-2 transition-colors ${isDarkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-600'}`}
-                title="Logout"
-              >
-                <FiLogOut className="w-5 h-5" />
-              </button>
-            </div>
+            </Link>
             
             {/* Theme toggle */}
             <button

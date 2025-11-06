@@ -21,6 +21,7 @@ import BulkOperations from './pages/BulkOperations';
 import PoolManagement from './pages/PoolManagement';
 import IPSearch from './pages/IPSearch';
 import SubnetCalculator from './pages/SubnetCalculator';
+import UserProfile from './pages/UserProfile';
 import DNS from './pages/DNS';
 import DHCP from './pages/DHCP';
 import IPAM from './pages/IPAM';
@@ -82,6 +83,7 @@ const AppRoutes = () => {
         <Route path="pool-management" element={<PoolManagement />} />
         <Route path="ip-search" element={<IPSearch />} />
         <Route path="subnet-calculator" element={<SubnetCalculator />} />
+        <Route path="profile" element={<UserProfile />} />
         <Route path="dns" element={<DNS />} />
         <Route path="dhcp" element={<DHCP />} />
         <Route path="ipam" element={<IPAM />} />
