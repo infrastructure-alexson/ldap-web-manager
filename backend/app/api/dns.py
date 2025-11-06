@@ -175,6 +175,7 @@ async def get_zone(
 @router.post("/zones", response_model=DNSZoneResponse, status_code=status.HTTP_201_CREATED)
 async def create_zone(
     zone: DNSZoneCreate,
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(require_operator)
 ):
     """
@@ -182,6 +183,7 @@ async def create_zone(
     
     Args:
         zone: Zone information
+        session: Database session for audit logging
         current_user: Authenticated user (operator or admin)
         
     Returns:
@@ -218,6 +220,21 @@ async def create_zone(
         ldap_conn.add(zone_dn, attributes)
         logger.info(f"DNS zone created: {zone.idnsName} by {current_user.get('username')}")
         
+        # Audit log
+        audit = await get_audit_logger(session)
+        await audit.log_dns_action(
+            AuditAction.CREATE,
+            zone_name=zone.idnsName,
+            user_id=current_user.get('username'),
+            details={
+                'serial': zone.idnsSOAserial,
+                'refresh': zone.idnsSOArefresh,
+                'nameserver': zone.idnsSOAmName,
+                'description': zone.description
+            }
+        )
+        await session.commit()
+        
         # Retrieve and return created zone
         return await get_zone(zone.idnsName, current_user)
         
@@ -228,6 +245,18 @@ async def create_zone(
         )
     except ldap.LDAPError as e:
         logger.error(f"LDAP error creating DNS zone: {e}")
+        
+        # Audit log failure
+        audit = await get_audit_logger(session)
+        await audit.log_dns_action(
+            AuditAction.CREATE,
+            zone_name=zone.idnsName,
+            user_id=current_user.get('username'),
+            status="failure",
+            details={'error': str(e)}
+        )
+        await session.commit()
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create DNS zone: {str(e)}"
@@ -304,6 +333,7 @@ async def update_zone(
 @router.delete("/zones/{zone_name}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_zone(
     zone_name: str,
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(require_admin)
 ):
     """
@@ -311,6 +341,7 @@ async def delete_zone(
     
     Args:
         zone_name: Zone name
+        session: Database session for audit logging
         current_user: Authenticated user (admin only)
     """
     config = get_config()
@@ -325,6 +356,15 @@ async def delete_zone(
         ldap_conn.delete(zone_dn)
         logger.info(f"DNS zone deleted: {zone_name} by {current_user.get('username')}")
         
+        # Audit log
+        audit = await get_audit_logger(session)
+        await audit.log_dns_action(
+            AuditAction.DELETE,
+            zone_name=zone_name,
+            user_id=current_user.get('username')
+        )
+        await session.commit()
+        
     except ldap.NO_SUCH_OBJECT:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -337,6 +377,18 @@ async def delete_zone(
         )
     except ldap.LDAPError as e:
         logger.error(f"LDAP error deleting DNS zone: {e}")
+        
+        # Audit log failure
+        audit = await get_audit_logger(session)
+        await audit.log_dns_action(
+            AuditAction.DELETE,
+            zone_name=zone_name,
+            user_id=current_user.get('username'),
+            status="failure",
+            details={'error': str(e)}
+        )
+        await session.commit()
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete DNS zone: {str(e)}"

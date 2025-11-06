@@ -4,6 +4,7 @@ Authentication API endpoints
 """
 
 from fastapi import APIRouter, HTTPException, status, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.auth import LoginRequest, TokenResponse, RefreshTokenRequest, UserInfo
 from app.auth.jwt import (
     authenticate_user_ldap,
@@ -13,6 +14,9 @@ from app.auth.jwt import (
     get_current_user
 )
 from app.config import get_config
+from app.db.base import get_session
+from app.db.models import AuditAction
+from app.db.audit import get_audit_logger
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,12 +25,13 @@ router = APIRouter()
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(credentials: LoginRequest):
+async def login(credentials: LoginRequest, session: AsyncSession = Depends(get_session)):
     """
     Authenticate user and return JWT tokens
     
     Args:
         credentials: Username and password
+        session: Database session for audit logging
         
     Returns:
         Access and refresh tokens
@@ -38,6 +43,16 @@ async def login(credentials: LoginRequest):
     
     if not user:
         logger.warning(f"Failed login attempt for user: {credentials.username}")
+        
+        # Audit log failed login
+        audit = await get_audit_logger(session)
+        await audit.log_authentication(
+            credentials.username,
+            status="failure",
+            details={'reason': 'invalid_credentials'}
+        )
+        await session.commit()
+        
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -57,6 +72,15 @@ async def login(credentials: LoginRequest):
     refresh_token = create_refresh_token({"sub": user['username']})
     
     logger.info(f"User logged in successfully: {credentials.username}")
+    
+    # Audit log successful login
+    audit = await get_audit_logger(session)
+    await audit.log_authentication(
+        credentials.username,
+        status="success",
+        details={'role': user.get('role', 'unknown')}
+    )
+    await session.commit()
     
     return {
         "access_token": access_token,
@@ -151,7 +175,7 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/logout")
-async def logout(current_user: dict = Depends(get_current_user)):
+async def logout(current_user: dict = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
     """
     Logout current user
     
@@ -160,10 +184,21 @@ async def logout(current_user: dict = Depends(get_current_user)):
     
     Args:
         current_user: Current user from JWT token
+        session: Database session for audit logging
         
     Returns:
         Success message
     """
     logger.info(f"User logged out: {current_user.get('username')}")
+    
+    # Audit log logout
+    audit = await get_audit_logger(session)
+    await audit.log_authentication(
+        current_user.get('username'),
+        status="success",
+        details={'action': 'logout'}
+    )
+    await session.commit()
+    
     return {"message": "Logged out successfully"}
 
