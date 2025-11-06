@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ldap-manager-postgres
+    environment:
+      POSTGRES_DB: ldap_manager
+      POSTGRES_USER: ldap_user
+      POSTGRES_PASSWORD: ldap_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ldap_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache (Optional)
+  redis:
+    image: redis:7-alpine
+    container_name: ldap-manager-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # LDAP Server (Mock for development)
+  openldap:
+    image: osixia/openldap:latest
+    container_name: ldap-manager-openldap
+    environment:
+      LDAP_ORGANISATION: "Example Organization"
+      LDAP_DOMAIN: "example.com"
+      LDAP_ADMIN_PASSWORD: admin
+    ports:
+      - "389:389"
+      - "636:636"
+    healthcheck:
+      test: ["CMD", "ldapsearch", "-x", "-H", "ldap://localhost", "-D", "cn=admin,dc=example,dc=com", "-w", "admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # LDAP Web Manager Application
+  app:
+    build: .
+    container_name: ldap-manager-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      openldap:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://ldap_user:ldap_password@postgres:5432/ldap_manager
+      REDIS_URL: redis://redis:6379/0
+      LDAP_SERVER: ldap://openldap:389
+      LDAP_BASE_DN: dc=example,dc=com
+      LDAP_ADMIN_DN: cn=admin,dc=example,dc=com
+      LDAP_ADMIN_PASSWORD: admin
+      JWT_SECRET: dev-secret-key-change-in-production
+      JWT_ALGORITHM: HS256
+      ENVIRONMENT: development
+    ports:
+      - "8000:8000"
+      - "8080:8080"
+    volumes:
+      - ./backend:/app/backend
+      - ./frontend/dist:/app/frontend/dist
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: ldap-manager-network
+
