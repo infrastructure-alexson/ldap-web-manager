@@ -151,3 +151,4 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async for session in db.get_async_session():
         yield session
 
+

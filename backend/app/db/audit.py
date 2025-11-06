@@ -251,3 +251,4 @@ async def get_audit_logger(session: AsyncSession) -> AuditLogger:
     """
     return AuditLogger(session)
 
+

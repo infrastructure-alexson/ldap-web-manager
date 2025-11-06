@@ -141,3 +141,4 @@ def downgrade() -> None:
     audit_action_enum = postgresql.ENUM('create', 'read', 'update', 'delete', 'login', 'logout', 'authenticate', 'authorize', 'error', name='auditaction')
     audit_action_enum.drop(op.get_bind(), checkfirst=True)
 
+
