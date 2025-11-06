@@ -5,6 +5,7 @@ DNS Management API endpoints
 
 import ldap
 from fastapi import APIRouter, HTTPException, status, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 import time
 from app.models.dns import (
@@ -14,6 +15,9 @@ from app.models.dns import (
 from app.auth.jwt import get_current_user, require_admin, require_operator
 from app.ldap.connection import get_ldap_connection
 from app.config import get_config
+from app.db.base import get_session
+from app.db.models import AuditAction
+from app.db.audit import get_audit_logger
 import logging
 
 logger = logging.getLogger(__name__)
