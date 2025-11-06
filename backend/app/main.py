@@ -16,6 +16,8 @@ from pathlib import Path
 
 # Import routers
 from app.api import auth, users, groups, dns, dhcp, ipam
+from app.db.base import get_database
+from app.config import get_config
 
 # Configure logging
 logging.basicConfig(
@@ -71,15 +73,36 @@ async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
     logger.info(f"Starting {APP_NAME} v{APP_VERSION}")
-    logger.info("Initializing LDAP connections...")
-    # TODO: Initialize LDAP connection pool
-    logger.info("Application started successfully")
+    
+    try:
+        logger.info("Initializing database connection...")
+        db = await get_database()
+        
+        # Verify database connection
+        if await db.health_check():
+            logger.info("Database connection verified")
+        else:
+            logger.error("Database health check failed")
+        
+        logger.info("Initializing LDAP connections...")
+        # TODO: Initialize LDAP connection pool
+        
+        logger.info("Application started successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize application: {e}", exc_info=True)
+        raise
     
     yield
     
     # Shutdown
     logger.info("Shutting down application...")
-    # TODO: Close LDAP connections
+    try:
+        db = await get_database()
+        await db.close()
+        logger.info("Database connections closed")
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}", exc_info=True)
+    
     logger.info("Application stopped")
 
 
@@ -169,17 +192,33 @@ async def health_check():
     
     Returns the health status of the application and its dependencies.
     """
-    # TODO: Check LDAP connection
-    # TODO: Check database connection
+    services = {
+        "api": "up",
+        "ldap": "unknown",
+        "database": "down"
+    }
+    
+    try:
+        # Check database connection
+        db = await get_database()
+        if await db.health_check():
+            services["database"] = "up"
+        else:
+            services["database"] = "down"
+    except Exception as e:
+        logger.warning(f"Database health check failed: {e}")
+        services["database"] = "error"
+    
+    # Check LDAP connection (TODO: Implement actual check)
+    services["ldap"] = "checking"
+    
+    # Overall status
+    status = "healthy" if services["database"] == "up" else "degraded"
     
     return {
-        "status": "healthy",
+        "status": status,
         "version": APP_VERSION,
-        "services": {
-            "api": "up",
-            "ldap": "checking",  # TODO: Implement actual check
-            "database": "checking"  # TODO: Implement actual check
-        }
+        "services": services
     }
 
 
