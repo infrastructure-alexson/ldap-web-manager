@@ -15,7 +15,7 @@ import logging
 from pathlib import Path
 
 # Import routers
-from app.api import auth, users, groups, dns, dhcp, ipam, service_accounts, audit, bulk
+from app.api import auth, users, groups, dns, dhcp, ipam, service_accounts, audit, bulk, ipam_advanced
 from app.db.base import get_database
 from app.config import get_config
 
@@ -241,6 +241,7 @@ app.include_router(groups.router, prefix="/api/groups", tags=["Groups"])
 app.include_router(service_accounts.router, prefix="/api/service-accounts", tags=["Service Accounts"])
 app.include_router(audit.router, prefix="/api/audit", tags=["Audit Logs"])
 app.include_router(bulk.router, prefix="/api/bulk", tags=["Bulk Operations"])
+app.include_router(ipam_advanced.router, prefix="/api/ipam", tags=["IPAM Advanced"])
 app.include_router(dns.router, prefix="/api/dns", tags=["DNS"])
 app.include_router(dhcp.router, prefix="/api/dhcp", tags=["DHCP"])
 app.include_router(ipam.router, prefix="/api/ipam", tags=["IPAM"])
