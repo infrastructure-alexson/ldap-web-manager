@@ -5,6 +5,7 @@ Group Management API endpoints
 
 import ldap
 from fastapi import APIRouter, HTTPException, status, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from app.models.group import (
     GroupCreate, GroupUpdate, GroupResponse, GroupListResponse,
@@ -13,6 +14,9 @@ from app.models.group import (
 from app.auth.jwt import get_current_user, require_admin, require_operator
 from app.ldap.connection import get_ldap_connection
 from app.config import get_config
+from app.db.base import get_session
+from app.db.models import AuditAction
+from app.db.audit import get_audit_logger
 import logging
 
 logger = logging.getLogger(__name__)
@@ -168,6 +172,7 @@ async def get_group(
 @router.post("", response_model=GroupResponse, status_code=status.HTTP_201_CREATED)
 async def create_group(
     group: GroupCreate,
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(require_operator)
 ):
     """
@@ -175,6 +180,7 @@ async def create_group(
     
     Args:
         group: Group information
+        session: Database session for audit logging
         current_user: Authenticated user (operator or admin)
         
     Returns:
@@ -207,6 +213,20 @@ async def create_group(
         ldap_conn.add(group_dn, attributes)
         logger.info(f"Group created: {group.cn} by {current_user.get('username')}")
         
+        # Audit log
+        audit = await get_audit_logger(session)
+        await audit.log_group_action(
+            AuditAction.CREATE,
+            group_name=group.cn,
+            user_id=current_user.get('username'),
+            details={
+                'gidNumber': group.gidNumber,
+                'description': group.description,
+                'members': group.memberUid or []
+            }
+        )
+        await session.commit()
+        
         # Retrieve and return created group
         return await get_group(group.cn, current_user)
         
@@ -217,6 +237,18 @@ async def create_group(
         )
     except ldap.LDAPError as e:
         logger.error(f"LDAP error creating group: {e}")
+        
+        # Audit log failure
+        audit = await get_audit_logger(session)
+        await audit.log_group_action(
+            AuditAction.CREATE,
+            group_name=group.cn,
+            user_id=current_user.get('username'),
+            status="failure",
+            details={'error': str(e)}
+        )
+        await session.commit()
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create group: {str(e)}"
@@ -293,6 +325,7 @@ async def update_group(
 @router.delete("/{group_name}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_group(
     group_name: str,
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(require_admin)
 ):
     """
@@ -300,6 +333,7 @@ async def delete_group(
     
     Args:
         group_name: Group name (cn)
+        session: Database session for audit logging
         current_user: Authenticated user (admin only)
     """
     config = get_config()
@@ -312,6 +346,15 @@ async def delete_group(
         ldap_conn.delete(group_dn)
         logger.info(f"Group deleted: {group_name} by {current_user.get('username')}")
         
+        # Audit log
+        audit = await get_audit_logger(session)
+        await audit.log_group_action(
+            AuditAction.DELETE,
+            group_name=group_name,
+            user_id=current_user.get('username')
+        )
+        await session.commit()
+        
     except ldap.NO_SUCH_OBJECT:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -319,6 +362,18 @@ async def delete_group(
         )
     except ldap.LDAPError as e:
         logger.error(f"LDAP error deleting group: {e}")
+        
+        # Audit log failure
+        audit = await get_audit_logger(session)
+        await audit.log_group_action(
+            AuditAction.DELETE,
+            group_name=group_name,
+            user_id=current_user.get('username'),
+            status="failure",
+            details={'error': str(e)}
+        )
+        await session.commit()
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete group: {str(e)}"
@@ -329,6 +384,7 @@ async def delete_group(
 async def add_member(
     group_name: str,
     member: GroupAddMember,
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(require_operator)
 ):
     """
@@ -337,6 +393,7 @@ async def add_member(
     Args:
         group_name: Group name (cn)
         member: Member to add
+        session: Database session for audit logging
         current_user: Authenticated user (operator or admin)
         
     Returns:
@@ -359,6 +416,16 @@ async def add_member(
         ldap_conn.modify(group_dn, modifications)
         logger.info(f"Member {member.username} added to group {group_name} by {current_user.get('username')}")
         
+        # Audit log
+        audit = await get_audit_logger(session)
+        await audit.log_group_action(
+            AuditAction.UPDATE,
+            group_name=group_name,
+            user_id=current_user.get('username'),
+            details={'action': 'add_member', 'member': member.username}
+        )
+        await session.commit()
+        
         return await get_group(group_name, current_user)
         
     except ldap.NO_SUCH_OBJECT:
@@ -373,6 +440,18 @@ async def add_member(
         )
     except ldap.LDAPError as e:
         logger.error(f"LDAP error adding member: {e}")
+        
+        # Audit log failure
+        audit = await get_audit_logger(session)
+        await audit.log_group_action(
+            AuditAction.UPDATE,
+            group_name=group_name,
+            user_id=current_user.get('username'),
+            status="failure",
+            details={'action': 'add_member', 'member': member.username, 'error': str(e)}
+        )
+        await session.commit()
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to add member: {str(e)}"
@@ -383,6 +462,7 @@ async def add_member(
 async def remove_member(
     group_name: str,
     username: str,
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(require_operator)
 ):
     """
@@ -391,6 +471,7 @@ async def remove_member(
     Args:
         group_name: Group name (cn)
         username: Username to remove
+        session: Database session for audit logging
         current_user: Authenticated user (operator or admin)
         
     Returns:
@@ -413,6 +494,16 @@ async def remove_member(
         ldap_conn.modify(group_dn, modifications)
         logger.info(f"Member {username} removed from group {group_name} by {current_user.get('username')}")
         
+        # Audit log
+        audit = await get_audit_logger(session)
+        await audit.log_group_action(
+            AuditAction.UPDATE,
+            group_name=group_name,
+            user_id=current_user.get('username'),
+            details={'action': 'remove_member', 'member': username}
+        )
+        await session.commit()
+        
         return await get_group(group_name, current_user)
         
     except ldap.NO_SUCH_OBJECT:
@@ -427,6 +518,18 @@ async def remove_member(
         )
     except ldap.LDAPError as e:
         logger.error(f"LDAP error removing member: {e}")
+        
+        # Audit log failure
+        audit = await get_audit_logger(session)
+        await audit.log_group_action(
+            AuditAction.UPDATE,
+            group_name=group_name,
+            user_id=current_user.get('username'),
+            status="failure",
+            details={'action': 'remove_member', 'member': username, 'error': str(e)}
+        )
+        await session.commit()
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to remove member: {str(e)}"
