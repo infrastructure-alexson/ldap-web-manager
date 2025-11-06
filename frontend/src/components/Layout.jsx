@@ -15,6 +15,7 @@ import {
   FiMapPin,
   FiLock,
   FiClipboard,
+  FiZap,
   FiLogOut,
   FiMenu,
 } from 'react-icons/fi';
@@ -29,6 +30,7 @@ const Layout = () => {
     { name: 'Groups', href: '/groups', icon: FiGrid },
     { name: 'Service Accounts', href: '/service-accounts', icon: FiLock },
     { name: 'Audit Logs', href: '/audit-logs', icon: FiClipboard },
+    { name: 'Bulk Operations', href: '/bulk-operations', icon: FiZap },
     { name: 'DNS', href: '/dns', icon: FiGlobe },
     { name: 'DHCP', href: '/dhcp', icon: FiServer },
     { name: 'IPAM', href: '/ipam', icon: FiMapPin },
