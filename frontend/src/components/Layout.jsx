@@ -16,6 +16,8 @@ import {
   FiLock,
   FiClipboard,
   FiZap,
+  FiSearch,
+  FiCalculator,
   FiLogOut,
   FiMenu,
 } from 'react-icons/fi';
@@ -31,6 +33,9 @@ const Layout = () => {
     { name: 'Service Accounts', href: '/service-accounts', icon: FiLock },
     { name: 'Audit Logs', href: '/audit-logs', icon: FiClipboard },
     { name: 'Bulk Operations', href: '/bulk-operations', icon: FiZap },
+    { name: 'Pool Management', href: '/pool-management', icon: FiMapPin },
+    { name: 'IP Search', href: '/ip-search', icon: FiSearch },
+    { name: 'Subnet Calculator', href: '/subnet-calculator', icon: FiCalculator },
     { name: 'DNS', href: '/dns', icon: FiGlobe },
     { name: 'DHCP', href: '/dhcp', icon: FiServer },
     { name: 'IPAM', href: '/ipam', icon: FiMapPin },
