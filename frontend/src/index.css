@@ -4,33 +4,108 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-gray-50 text-gray-900 transition-colors duration-200;
+  }
+
+  :root.dark body {
+    @apply bg-gray-900 text-gray-100;
+  }
+
+  :root.dark {
+    color-scheme: dark;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors;
+    @apply px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors;
+  }
+
+  .dark .btn-primary {
+    @apply focus:ring-offset-gray-900;
   }
 
   .btn-secondary {
     @apply px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-colors;
   }
 
+  .dark .btn-secondary {
+    @apply bg-gray-700 text-gray-200 hover:bg-gray-600 focus:ring-offset-gray-900;
+  }
+
   .btn-danger {
     @apply px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors;
   }
 
+  .dark .btn-danger {
+    @apply focus:ring-offset-gray-900;
+  }
+
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors;
+  }
+
+  .dark .input-field {
+    @apply bg-gray-800 border-gray-600 text-gray-100 placeholder-gray-500;
   }
 
   .card {
-    @apply bg-white rounded-lg shadow-sm p-6;
+    @apply bg-white rounded-lg shadow-sm p-6 transition-colors;
+  }
+
+  .dark .card {
+    @apply bg-gray-800 shadow-md;
   }
 
   .table-container {
-    @apply overflow-x-auto bg-white rounded-lg shadow;
+    @apply overflow-x-auto bg-white rounded-lg shadow transition-colors;
+  }
+
+  .dark .table-container {
+    @apply bg-gray-800 shadow-md;
+  }
+
+  /* Dark mode for tables */
+  .dark table {
+    @apply text-gray-100;
+  }
+
+  .dark thead {
+    @apply bg-gray-700;
+  }
+
+  .dark tbody tr {
+    @apply border-gray-700;
+  }
+
+  .dark tbody tr:hover {
+    @apply bg-gray-700;
+  }
+
+  /* Dark mode for modals */
+  .dark .modal-overlay {
+    @apply bg-black bg-opacity-50;
+  }
+
+  .dark .modal-content {
+    @apply bg-gray-800;
+  }
+
+  /* Dark mode for badges */
+  .dark .badge-success {
+    @apply bg-green-900 text-green-200;
+  }
+
+  .dark .badge-danger {
+    @apply bg-red-900 text-red-200;
+  }
+
+  .dark .badge-warning {
+    @apply bg-yellow-900 text-yellow-200;
+  }
+
+  .dark .badge-info {
+    @apply bg-blue-900 text-blue-200;
   }
 }
 
