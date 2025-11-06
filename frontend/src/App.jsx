@@ -16,6 +16,8 @@ import Users from './pages/Users';
 import Groups from './pages/Groups';
 import DNS from './pages/DNS';
 import DHCP from './pages/DHCP';
+import IPAM from './pages/IPAM';
+import IPAMVisualPage from './pages/IPAMVisualPage';
 import Layout from './components/Layout';
 
 // Create React Query client
@@ -69,8 +71,8 @@ const AppRoutes = () => {
         <Route path="groups" element={<Groups />} />
         <Route path="dns" element={<DNS />} />
         <Route path="dhcp" element={<DHCP />} />
-        {/* Add more routes as developed */}
-        {/* <Route path="ipam" element={<IPAM />} /> */}
+        <Route path="ipam" element={<IPAM />} />
+        <Route path="ipam/pools/:poolId/visual" element={<IPAMVisualPage />} />
       </Route>
 
       {/* Catch all - redirect to dashboard */}
