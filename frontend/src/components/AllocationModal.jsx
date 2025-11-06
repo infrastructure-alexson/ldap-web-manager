@@ -232,3 +232,4 @@ const AllocationModal = ({ ip, onConfirm, onCancel }) => {
 
 export default AllocationModal;
 
+
