@@ -1,0 +1,36 @@
+---
+ansible_user: automation
+
+microk8s_bin: /snap/bin/microk8s
+
+ldap_manager_namespace: ldap-manager
+ldap_manager_ingress_hostname: ldap-manager.svc.eh168.alexson.org
+ldap_manager_haproxy_host: lb1.svc.eh168.alexson.org
+ldap_manager_haproxy_port: 13200
+
+ldap_manager_database_user: ldap_manager
+ldap_manager_postgres_database: ldap_manager
+ldap_manager_postgres_connection_host: pgsql1.svc.eh168.alexson.org
+ldap_manager_database_url: >-
+  postgresql://{{ ldap_manager_database_user }}:{{ ldap_manager_database_password }}@{{ ldap_manager_postgres_connection_host }}:5432/{{ ldap_manager_postgres_database }}
+
+ldap_manager_redis_host: redis1.svc.eh168.alexson.org
+ldap_manager_redis_db_index: 1
+ldap_manager_redis_url: >-
+  redis://:{{ ldap_manager_redis_password }}@{{ ldap_manager_redis_host }}:6379/{{ ldap_manager_redis_db_index }}
+
+ldap_bind_dn: cn=webmanager,ou=ServiceAccounts,dc=eh168,dc=alexson,dc=org
+ldap_primary_server: ldap1.svc.eh168.alexson.org
+ldap_secondary_server: ldap2.svc.eh168.alexson.org
+ldap_base_dn: dc=eh168,dc=alexson,dc=org
+ldap_people_ou: ou=People,dc=eh168,dc=alexson,dc=org
+ldap_groups_ou: ou=Groups,dc=eh168,dc=alexson,dc=org
+ldap_service_accounts_ou: ou=ServiceAccounts,dc=eh168,dc=alexson,dc=org
+ldap_dns_ou: ou=DNS,ou=Services,dc=eh168,dc=alexson,dc=org
+ldap_dhcp_ou: ou=DHCP,ou=Services,dc=eh168,dc=alexson,dc=org
+
+ldap_manager_database_password: ""
+ldap_manager_redis_password: ""
+ldap_webmanager_password: ""
+ldap_manager_jwt_secret: ""
+ldap_manager_secret_key: ""

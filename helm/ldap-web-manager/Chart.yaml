@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ldap-web-manager
+description: LDAP Web Manager (frontend + backend)
+type: application
+version: 0.1.0
+appVersion: "latest"

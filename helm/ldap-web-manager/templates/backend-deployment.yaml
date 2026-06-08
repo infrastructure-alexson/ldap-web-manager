@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ldap-manager-backend
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: ldap-manager-backend
+    {{- include "ldap-manager.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app: ldap-manager-backend
+  template:
+    metadata:
+      labels:
+        app: ldap-manager-backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.databaseSecretName }}
+                  key: {{ .Values.backend.databaseSecretKey }}
+            - name: LDAP_BIND_DN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.runtimeSecretName }}
+                  key: LDAP_BIND_DN
+            - name: LDAP_WEBMANAGER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.runtimeSecretName }}
+                  key: LDAP_WEBMANAGER_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.runtimeSecretName }}
+                  key: JWT_SECRET
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.runtimeSecretName }}
+                  key: SECRET_KEY
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.runtimeSecretName }}
+                  key: REDIS_URL
+            - name: LDAP_PRIMARY_SERVER
+              value: {{ .Values.ldap.primaryServer | quote }}
+            - name: LDAP_SECONDARY_SERVER
+              value: {{ .Values.ldap.secondaryServer | quote }}
+            - name: LDAP_BASE_DN
+              value: {{ .Values.ldap.baseDn | quote }}
+            - name: LDAP_PEOPLE_OU
+              value: {{ .Values.ldap.peopleOu | quote }}
+            - name: LDAP_GROUPS_OU
+              value: {{ .Values.ldap.groupsOu | quote }}
+            - name: LDAP_SERVICE_ACCOUNTS_OU
+              value: {{ .Values.ldap.serviceAccountsOu | quote }}
+            - name: LDAP_DNS_OU
+              value: {{ .Values.ldap.dnsOu | quote }}
+            - name: LDAP_DHCP_OU
+              value: {{ .Values.ldap.dhcpOu | quote }}
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000

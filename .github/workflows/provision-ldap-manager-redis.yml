@@ -1,0 +1,85 @@
+name: Provision LDAP Manager Redis
+
+on:
+  workflow_dispatch:
+    inputs:
+      check_mode:
+        description: Ansible check mode (dry run)
+        required: false
+        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      check_mode:
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  provision-redis:
+    runs-on: [self-hosted, linux, infra]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Load LDAP Manager secrets from Infisical (OIDC)
+        uses: infrastructure-alexson/.github-private/actions/infisical-oidc-load@v1.5.0
+        with:
+          secret_path: /LDAPManager
+          recursive: "false"
+          secret_keys: ldap-manager-redis-password
+
+      - name: Load Ansible SSH key from Infisical (OIDC)
+        uses: infrastructure-alexson/.github-private/actions/infisical-oidc-load@v1.5.0
+        with:
+          secret_path: /Ansible
+          recursive: "false"
+          secret_keys: ansible-ssh-private-key
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Ansible and collections
+        run: |
+          pip install "ansible>=9,<11" pyyaml
+          ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: Materialize vault vars
+        working-directory: ansible
+        env:
+          LDAP_MANAGER_REDIS_PASSWORD: ${{ env.LDAP_MANAGER_REDIS_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os, yaml
+          from pathlib import Path
+          data = {"ldap_manager_redis_password": os.environ["LDAP_MANAGER_REDIS_PASSWORD"]}
+          p = Path("inventory/group_vars/all/vault.yml")
+          p.parent.mkdir(parents=True, exist_ok=True)
+          p.write_text(yaml.dump(data), encoding="utf-8")
+          p.chmod(0o600)
+          PY
+
+      - name: Write SSH private key file
+        run: |
+          set +x
+          umask 077
+          key_file="${RUNNER_TEMP}/ansible-automation-key"
+          printf '%s\n' "${ANSIBLE_SSH_PRIVATE_KEY}" > "$key_file"
+          chmod 600 "$key_file"
+          echo "ANSIBLE_PRIVATE_KEY_FILE=${key_file}" >> "$GITHUB_ENV"
+
+      - name: Provision Redis
+        working-directory: ansible
+        run: |
+          EXTRA=()
+          if [ "${{ inputs.check_mode }}" = "true" ]; then EXTRA+=(--check --diff); fi
+          ansible-playbook playbook-provision-redis.yml \
+            -i inventory/inventory.yml \
+            -e ansible_user=automation \
+            -e "ansible_ssh_private_key_file=${ANSIBLE_PRIVATE_KEY_FILE}" \
+            "${EXTRA[@]}"

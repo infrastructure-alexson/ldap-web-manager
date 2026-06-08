@@ -1,0 +1,40 @@
+---
+- name: Validate LDAP Manager Redis password is set
+  ansible.builtin.assert:
+    that:
+      - ldap_manager_redis_password | length > 0
+    fail_msg: Set ldap_manager_redis_password (Infisical /LDAPManager/ldap-manager-redis-password).
+
+- name: Build redis-cli authentication arguments
+  ansible.builtin.set_fact:
+    ldap_manager_redis_cli_auth_args: >-
+      {{
+        (['--user', ldap_manager_redis_admin_user] if (ldap_manager_redis_admin_user | length > 0) else [])
+      }}
+
+- name: Create or update LDAP Manager Redis ACL user
+  ansible.builtin.command:
+    argv: >-
+      {{
+        ['redis-cli'] + ldap_manager_redis_cli_auth_args +
+        ['ACL', 'SETUSER', ldap_manager_redis_user, 'on', '>' ~ ldap_manager_redis_password,
+         '~*', '&*', '+@all']
+      }}
+  environment:
+    REDISCLI_AUTH: "{{ ldap_manager_redis_admin_password if (ldap_manager_redis_admin_password | length > 0) else omit }}"
+  register: ldap_manager_redis_acl
+  changed_when: "'OK' in ldap_manager_redis_acl.stdout or ldap_manager_redis_acl.rc == 0"
+  failed_when: ldap_manager_redis_acl.rc != 0
+  no_log: true
+
+- name: Allow Redis from MicroK8s nodes in firewalld
+  ansible.posix.firewalld:
+    rich_rule: 'rule family="ipv4" source address="{{ item }}/32" port port="{{ ldap_manager_redis_port }}" protocol="tcp" accept'
+    zone: "{{ ldap_manager_redis_firewalld_zone }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ ldap_manager_k8s_client_ips }}"
+  when:
+    - ldap_manager_redis_firewalld_manage | bool
+    - ldap_manager_k8s_client_ips | length > 0

@@ -1,0 +1,16 @@
+---
+all:
+  children:
+    microk8s:
+      hosts:
+        k8s-worker1.svc.eh168.alexson.org: {}
+        k8s-worker2.svc.eh168.alexson.org: {}
+    microk8s_control:
+      hosts:
+        k8s-cp.svc.eh168.alexson.org: {}
+    postgresql:
+      hosts:
+        pgsql1.svc.eh168.alexson.org: {}
+    redis:
+      hosts:
+        redis1.svc.eh168.alexson.org: {}

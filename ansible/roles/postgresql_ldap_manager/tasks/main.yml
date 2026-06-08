@@ -1,0 +1,99 @@
+---
+- name: Validate LDAP Manager database password is set
+  ansible.builtin.assert:
+    that:
+      - ldap_manager_database_password | length > 0
+    fail_msg: Set ldap_manager_database_password (Infisical /LDAPManager/ldap-manager-database-password).
+
+- name: Escape password for SQL literals
+  ansible.builtin.set_fact:
+    ldap_manager_postgres_password_sql: "{{ ldap_manager_database_password | replace(\"'\", \"''\") }}"
+  no_log: true
+
+- name: Build psql connection arguments for admin user
+  ansible.builtin.set_fact:
+    ldap_manager_psql_conn_args: >-
+      {{
+        (['-U', ldap_manager_postgres_admin_user] if (ldap_manager_postgres_admin_use_password_auth | bool) else [])
+        + (['-h', ldap_manager_postgres_psql_host] if (ldap_manager_postgres_psql_host | default('') | length > 0) else [])
+      }}
+    ldap_manager_psql_admin_env: >-
+      {{
+        {'PGPASSWORD': ldap_manager_postgres_admin_password}
+        if (ldap_manager_postgres_admin_use_password_auth | bool)
+        else {}
+      }}
+    ldap_manager_psql_become_user: "{{ 'postgres' if not (ldap_manager_postgres_admin_use_password_auth | bool) else 'root' }}"
+
+- name: Create or update LDAP Manager PostgreSQL role
+  ansible.builtin.command:
+    argv: "{{ ['psql', '-v', 'ON_ERROR_STOP=1', '-d', 'postgres', '-c', ldap_manager_postgres_role_sql] + ldap_manager_psql_conn_args }}"
+  vars:
+    ldap_manager_postgres_role_sql: >-
+      DO $$ BEGIN
+      IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{ ldap_manager_postgres_user }}') THEN
+      CREATE ROLE {{ ldap_manager_postgres_user }} LOGIN PASSWORD '{{ ldap_manager_postgres_password_sql }}'
+      NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      ELSE
+      ALTER ROLE {{ ldap_manager_postgres_user }} PASSWORD '{{ ldap_manager_postgres_password_sql }}';
+      END IF;
+      END $$;
+  environment: "{{ ldap_manager_psql_admin_env }}"
+  become: true
+  become_user: "{{ ldap_manager_psql_become_user }}"
+  no_log: true
+
+- name: Check if LDAP Manager database exists
+  ansible.builtin.command:
+    argv: "{{ ['psql', '-d', 'postgres', '-tAc', ldap_manager_db_check_sql] + ldap_manager_psql_conn_args }}"
+  vars:
+    ldap_manager_db_check_sql: "SELECT 1 FROM pg_database WHERE datname = '{{ ldap_manager_postgres_database }}'"
+  environment: "{{ ldap_manager_psql_admin_env }}"
+  become: true
+  become_user: "{{ ldap_manager_psql_become_user }}"
+  register: ldap_manager_db_exists
+  changed_when: false
+  no_log: true
+
+- name: Create LDAP Manager database
+  ansible.builtin.command:
+    argv: "{{ ['psql', '-v', 'ON_ERROR_STOP=1', '-d', 'postgres', '-c', ldap_manager_create_db_sql] + ldap_manager_psql_conn_args }}"
+  vars:
+    ldap_manager_create_db_sql: >-
+      CREATE DATABASE "{{ ldap_manager_postgres_database }}"
+      OWNER {{ ldap_manager_postgres_user }}
+      ENCODING 'UTF8'
+      LC_COLLATE 'en_US.UTF-8'
+      LC_CTYPE 'en_US.UTF-8'
+      TEMPLATE template0
+  environment: "{{ ldap_manager_psql_admin_env }}"
+  become: true
+  become_user: "{{ ldap_manager_psql_become_user }}"
+  no_log: true
+  when: ldap_manager_db_exists.stdout | trim != '1'
+
+- name: Allow LDAP Manager user from MicroK8s nodes in pg_hba.conf
+  ansible.builtin.blockinfile:
+    path: "{{ ldap_manager_postgres_pg_hba_conf }}"
+    marker: "# {mark} ANSIBLE MANAGED - LDAP Manager MicroK8s clients"
+    block: |
+      {% for ip in ldap_manager_k8s_client_ips %}
+      host    {{ ldap_manager_postgres_database }}    {{ ldap_manager_postgres_user }}    {{ ip }}/32    {{ ldap_manager_postgres_pg_hba_method }}
+      {% endfor %}
+    create: false
+  become: true
+  when:
+    - ldap_manager_postgres_pg_hba_manage | bool
+    - ldap_manager_k8s_client_ips | length > 0
+
+- name: Allow PostgreSQL from MicroK8s nodes in firewalld
+  ansible.posix.firewalld:
+    rich_rule: 'rule family="ipv4" source address="{{ item }}/32" port port="{{ ldap_manager_postgres_port }}" protocol="tcp" accept'
+    zone: "{{ ldap_manager_postgres_firewalld_zone }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ ldap_manager_k8s_client_ips }}"
+  when:
+    - ldap_manager_postgres_firewalld_manage | bool
+    - ldap_manager_k8s_client_ips | length > 0

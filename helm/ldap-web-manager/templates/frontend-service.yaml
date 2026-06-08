@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ldap-manager-frontend
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: ldap-manager-frontend
+  ports:
+    - port: {{ .Values.frontend.service.port }}
+      targetPort: {{ .Values.frontend.service.targetPort }}

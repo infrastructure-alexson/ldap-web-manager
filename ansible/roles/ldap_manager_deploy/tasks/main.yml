@@ -1,0 +1,102 @@
+---
+- name: Validate LDAP Manager deploy prerequisites
+  ansible.builtin.assert:
+    that:
+      - ldap_manager_database_url | length > 0
+      - ldap_webmanager_password | length > 0
+      - ldap_manager_jwt_secret | length > 0
+      - ldap_manager_secret_key | length > 0
+    fail_msg: Set database, LDAP, JWT, and app secrets in vault.yml (Infisical /LDAPManager).
+
+- name: Verify microk8s binary exists
+  ansible.builtin.stat:
+    path: "{{ microk8s_bin }}"
+  register: ldap_manager_microk8s_bin
+  failed_when: not ldap_manager_microk8s_bin.stat.exists | default(false)
+
+- name: Ensure LDAP Manager namespace exists
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if ! {{ microk8s_bin }} kubectl get namespace {{ ldap_manager_namespace }} >/dev/null 2>&1; then
+      {{ microk8s_bin }} kubectl create namespace {{ ldap_manager_namespace }}
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Apply DATABASE_URL secret
+  ansible.builtin.shell: |
+    set -euo pipefail
+    {{ microk8s_bin }} kubectl create secret generic {{ ldap_manager_database_secret_name }} \
+      --namespace {{ ldap_manager_namespace }} \
+      --from-literal=DATABASE_URL={{ ldap_manager_database_url | trim | quote }} \
+      --dry-run=client -o yaml | {{ microk8s_bin }} kubectl apply -f -
+  args:
+    executable: /bin/bash
+  no_log: true
+
+- name: Apply LDAP Manager runtime secrets
+  ansible.builtin.shell: |
+    set -euo pipefail
+    {{ microk8s_bin }} kubectl create secret generic {{ ldap_manager_runtime_secret_name }} \
+      --namespace {{ ldap_manager_namespace }} \
+      --from-literal=LDAP_BIND_DN={{ ldap_bind_dn | quote }} \
+      --from-literal=LDAP_WEBMANAGER_PASSWORD={{ ldap_webmanager_password | quote }} \
+      --from-literal=JWT_SECRET={{ ldap_manager_jwt_secret | quote }} \
+      --from-literal=SECRET_KEY={{ ldap_manager_secret_key | quote }} \
+      --from-literal=REDIS_URL={{ ldap_manager_redis_url | quote }} \
+      --dry-run=client -o yaml | {{ microk8s_bin }} kubectl apply -f -
+  args:
+    executable: /bin/bash
+  no_log: true
+
+- name: Stage LDAP Manager Helm chart on control plane
+  ansible.builtin.copy:
+    src: "{{ ldap_manager_helm_chart_path }}/"
+    dest: "{{ ldap_manager_helm_staging_chart_path }}/"
+    mode: preserve
+
+- name: Install or upgrade LDAP Manager Helm release
+  ansible.builtin.command:
+    argv:
+      - "{{ microk8s_bin }}"
+      - helm3
+      - upgrade
+      - --install
+      - "{{ ldap_manager_helm_release }}"
+      - "{{ ldap_manager_helm_staging_chart_path }}"
+      - --namespace
+      - "{{ ldap_manager_namespace }}"
+      - -f
+      - "{{ ldap_manager_helm_staging_values_file }}"
+      - --set
+      - ingress.host={{ ldap_manager_ingress_hostname }}
+      - --set
+      - backend.image.tag={{ ldap_manager_image_tag }}
+      - --set
+      - frontend.image.tag={{ ldap_manager_image_tag }}
+      - --timeout
+      - "{{ ldap_manager_helm_timeout }}"
+  register: ldap_manager_helm_deploy
+  changed_when: >-
+    'has been upgraded' in ldap_manager_helm_deploy.stdout or
+    'has been installed' in ldap_manager_helm_deploy.stdout
+
+- name: Wait for backend deployment
+  ansible.builtin.command: >-
+    {{ microk8s_bin }} kubectl rollout status deployment/ldap-manager-backend
+    -n {{ ldap_manager_namespace }} --timeout=300s
+  changed_when: false
+
+- name: Wait for frontend deployment
+  ansible.builtin.command: >-
+    {{ microk8s_bin }} kubectl rollout status deployment/ldap-manager-frontend
+    -n {{ ldap_manager_namespace }} --timeout=300s
+  changed_when: false
+
+- name: Show LDAP Manager access hint
+  ansible.builtin.debug:
+    msg:
+      - "LDAP Manager deployed in namespace {{ ldap_manager_namespace }}."
+      - "Ingress host: {{ ldap_manager_ingress_hostname }}"
+      - "HAProxy: http://{{ ldap_manager_haproxy_host }}:{{ ldap_manager_haproxy_port }}"

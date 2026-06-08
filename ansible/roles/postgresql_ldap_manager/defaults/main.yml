@@ -1,0 +1,16 @@
+---
+ldap_manager_postgres_user: "{{ ldap_manager_database_user }}"
+ldap_manager_postgres_database: ldap_manager
+ldap_manager_postgres_port: 5432
+ldap_manager_postgres_admin_user: postgres
+ldap_manager_postgres_admin_password: ""
+ldap_manager_postgres_admin_use_password_auth: false
+ldap_manager_postgres_psql_host: ""
+ldap_manager_postgres_connection_host: "{{ inventory_hostname }}"
+ldap_manager_postgres_pg_hba_conf: /var/lib/pgsql/16/data/pg_hba.conf
+ldap_manager_postgres_pg_hba_manage: true
+ldap_manager_postgres_pg_hba_method: scram-sha-256
+ldap_manager_k8s_client_ips: []
+ldap_manager_postgres_firewalld_manage: true
+ldap_manager_postgres_firewalld_zone: public
+ldap_manager_postgres_service_name: postgresql-16

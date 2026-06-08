@@ -1,0 +1,9 @@
+---
+ldap_manager_redis_user: ldap_manager
+ldap_manager_redis_port: 6379
+ldap_manager_redis_db_index: 1
+ldap_manager_redis_admin_user: ""
+ldap_manager_redis_admin_password: ""
+ldap_manager_redis_firewalld_manage: true
+ldap_manager_redis_firewalld_zone: public
+ldap_manager_k8s_client_ips: []

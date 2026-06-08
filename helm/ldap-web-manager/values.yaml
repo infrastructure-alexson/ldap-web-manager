@@ -1,0 +1,39 @@
+namespace: ldap-manager
+
+ingress:
+  enabled: true
+  className: public
+  host: ldap-manager.svc.eh168.alexson.org
+  annotations: {}
+
+backend:
+  image:
+    repository: quay.io/infrastructure-alexson/ldap-web-manager-backend
+    tag: latest
+    pullPolicy: Always
+  replicaCount: 1
+  service:
+    port: 8000
+  databaseSecretName: ldap-manager-database
+  databaseSecretKey: DATABASE_URL
+  runtimeSecretName: ldap-manager-runtime
+
+frontend:
+  image:
+    repository: quay.io/infrastructure-alexson/ldap-web-manager-frontend
+    tag: latest
+    pullPolicy: Always
+  replicaCount: 1
+  service:
+    port: 80
+    targetPort: 80
+
+ldap:
+  primaryServer: ldap1.svc.eh168.alexson.org
+  secondaryServer: ldap2.svc.eh168.alexson.org
+  baseDn: dc=eh168,dc=alexson,dc=org
+  peopleOu: ou=People,dc=eh168,dc=alexson,dc=org
+  groupsOu: ou=Groups,dc=eh168,dc=alexson,dc=org
+  serviceAccountsOu: ou=ServiceAccounts,dc=eh168,dc=alexson,dc=org
+  dnsOu: ou=DNS,ou=Services,dc=eh168,dc=alexson,dc=org
+  dhcpOu: ou=DHCP,ou=Services,dc=eh168,dc=alexson,dc=org

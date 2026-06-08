@@ -1,0 +1,12 @@
+---
+microk8s_bin: /snap/bin/microk8s
+ldap_manager_helm_chart_path: "{{ playbook_dir }}/../helm/ldap-web-manager"
+ldap_manager_helm_staging_dir: /tmp/ldap-manager-helm
+ldap_manager_helm_staging_chart_path: "{{ ldap_manager_helm_staging_dir }}/ldap-web-manager"
+ldap_manager_helm_staging_values_file: "{{ ldap_manager_helm_staging_dir }}/ldap-web-manager/values.yaml"
+ldap_manager_helm_release: ldap-manager
+ldap_manager_helm_timeout: 10m
+ldap_manager_image_tag: latest
+ldap_manager_image_pull_policy: Always
+ldap_manager_database_secret_name: ldap-manager-database
+ldap_manager_runtime_secret_name: ldap-manager-runtime

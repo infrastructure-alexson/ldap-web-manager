@@ -1,0 +1,49 @@
+---
+- name: Gather MicroK8s node facts for Redis client ACLs
+  hosts: microk8s:microk8s_control
+  gather_facts: true
+  tags: [always]
+
+- name: Build Kubernetes client IP list
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tags: [always]
+  tasks:
+    - name: Initialize client IP list
+      ansible.builtin.set_fact:
+        ldap_manager_k8s_client_ips_cached: []
+      run_once: true
+
+    - name: Collect IPv4 from MicroK8s hosts
+      ansible.builtin.set_fact:
+        ldap_manager_k8s_client_ips_cached: >-
+          {{ ldap_manager_k8s_client_ips_cached + [hostvars[item].ansible_facts['default_ipv4']['address']] }}
+      loop: "{{ (groups['microk8s'] | default([])) + (groups['microk8s_control'] | default([])) }}"
+      when: hostvars[item].ansible_facts.default_ipv4.address is defined
+      run_once: true
+
+    - name: Deduplicate client IPs
+      ansible.builtin.set_fact:
+        ldap_manager_k8s_client_ips_cached: "{{ ldap_manager_k8s_client_ips_cached | unique }}"
+      run_once: true
+
+- name: Provision Redis for LDAP Manager
+  hosts: redis
+  become: true
+  vars_files:
+    - "{{ playbook_dir }}/inventory/group_vars/all.yml"
+    - "{{ playbook_dir }}/inventory/group_vars/all/vault.yml"
+  pre_tasks:
+    - name: Set Kubernetes client IPs
+      ansible.builtin.set_fact:
+        ldap_manager_k8s_client_ips: >-
+          {{
+            (
+              hostvars['localhost'].get('ldap_manager_k8s_client_ips_cached', [])
+              + (ldap_manager_k8s_client_ips | default([]))
+            ) | unique
+          }}
+  roles:
+    - role: redis_ldap_manager
+      tags: [redis]
