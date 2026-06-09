@@ -33,6 +33,9 @@ jobs:
     runs-on: [self-hosted, linux, infra]
     steps:
       - uses: actions/checkout@v5
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
 
       - name: Load LDAP Manager secrets from Infisical (OIDC)
         uses: infrastructure-alexson/.github-private/actions/infisical-oidc-load@v1.5.0
