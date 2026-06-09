@@ -31,22 +31,18 @@ jobs:
           recursive: "true"
           secret_keys: >-
             github-app-client-id,
-            github-app-id,
             github-app-private-key,
             automation-github-app-client-id,
-            automation-github-app-id,
             automation-github-app-private-key
 
       - name: Create GitHub App token for repository checkout
         id: gh-app
         env:
           FALLBACK_CLIENT_ID: ${{ secrets.AUTOMATION_GITHUB_APP_CLIENT_ID }}
-          FALLBACK_APP_ID: ${{ secrets.AUTOMATION_GITHUB_APP_ID }}
           FALLBACK_APP_KEY: ${{ secrets.AUTOMATION_GITHUB_APP_PRIVATE_KEY }}
         uses: infrastructure-alexson/.github-private/actions/github-app-token@v1.2.0
         with:
           client_id: ${{ env.AUTOMATION_GITHUB_APP_CLIENT_ID || env.GITHUB_APP_CLIENT_ID || env.FALLBACK_CLIENT_ID }}
-          app_id: ${{ env.AUTOMATION_GITHUB_APP_ID || env.GITHUB_APP_ID || env.FALLBACK_APP_ID }}
           private_key: ${{ env.AUTOMATION_GITHUB_APP_PRIVATE_KEY || env.GITHUB_APP_PRIVATE_KEY || env.FALLBACK_APP_KEY }}
           owner: infrastructure-alexson
           repositories: ldap-web-manager
