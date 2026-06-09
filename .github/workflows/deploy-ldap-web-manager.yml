@@ -49,7 +49,7 @@ jobs:
         env:
           FALLBACK_CLIENT_ID: ${{ secrets.AUTOMATION_GITHUB_APP_CLIENT_ID }}
           FALLBACK_APP_KEY: ${{ secrets.AUTOMATION_GITHUB_APP_PRIVATE_KEY }}
-        uses: infrastructure-alexson/.github-private/actions/github-app-token@v1.2.0
+        uses: infrastructure-alexson/.github-private/actions/github-app-token@v1.6.0
         with:
           client_id: ${{ env.AUTOMATION_GITHUB_APP_CLIENT_ID || env.GITHUB_APP_CLIENT_ID || env.FALLBACK_CLIENT_ID }}
           private_key: ${{ env.AUTOMATION_GITHUB_APP_PRIVATE_KEY || env.GITHUB_APP_PRIVATE_KEY || env.FALLBACK_APP_KEY }}
