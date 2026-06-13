@@ -53,19 +53,19 @@ jobs:
           ref: ${{ job.workflow_sha }}
           token: ${{ steps.gh-app.outputs.token }}
 
+      - name: Prepare Ansible SSH user certificate
+        uses: infrastructure-alexson/.github-private/actions/ansible-ssh-cert-prep@v1
+        with:
+          signing_project_id: fca9f329-3988-40f8-a695-89fde921fc4d
+          principal: automation
+          cert_ttl: 1h
+
       - name: Load LDAP Manager secrets from Infisical (OIDC)
         uses: infrastructure-alexson/.github-private/actions/infisical-oidc-load@v1.5.0
         with:
           secret_path: /LDAPManager
           recursive: "false"
           secret_keys: ldap-manager-database-password
-
-      - name: Load Ansible SSH key from Infisical (OIDC)
-        uses: infrastructure-alexson/.github-private/actions/infisical-oidc-load@v1.5.0
-        with:
-          secret_path: /Ansible
-          recursive: "false"
-          secret_keys: ansible-ssh-private-key
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -96,24 +96,20 @@ jobs:
           p.chmod(0o600)
           PY
 
-      - name: Write SSH private key file
-        run: |
-          set +x
-          umask 077
-          key="${ANSIBLE_SSH_PRIVATE_KEY:-}"
-          [ -n "$key" ] || { echo "::error::ANSIBLE_SSH_PRIVATE_KEY missing"; exit 1; }
-          key_file="${RUNNER_TEMP}/ansible-automation-key"
-          printf '%s\n' "$key" > "$key_file"
-          chmod 600 "$key_file"
-          echo "ANSIBLE_PRIVATE_KEY_FILE=${key_file}" >> "$GITHUB_ENV"
-
       - name: Provision PostgreSQL
         working-directory: ansible
+        env:
+          ANSIBLE_PRIVATE_KEY_FILE: ${{ env.ANSIBLE_SSH_PRIVATE_KEY_FILE }}
+          ANSIBLE_SSH_COMMON_ARGS: ${{ env.ANSIBLE_SSH_COMMON_ARGS }}
         run: |
+          set -euo pipefail
           EXTRA=()
           if [ "${{ inputs.check_mode }}" = "true" ]; then EXTRA+=(--check --diff); fi
           ansible-playbook playbook-provision-db.yml \
             -i inventory/inventory.yml \
             -e ansible_user=automation \
-            -e "ansible_ssh_private_key_file=${ANSIBLE_PRIVATE_KEY_FILE}" \
             "${EXTRA[@]}"
+
+      - name: Remove Ansible SSH cert and key files
+        if: always()
+        uses: infrastructure-alexson/.github-private/actions/ansible-ssh-cert-cleanup@v1
